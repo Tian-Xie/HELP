@@ -13,9 +13,10 @@ int main(int argc, char* argv[])
 	else
 		strcpy(Filename, argv[1]);
 	
+	clock_t Tm = GetTime();
 	CheckError(MPS_ReadFile(), "MPS ReadFile Failed!");
+	printf("MPS_ReadFile: %d ms\n", GetTime() - Tm);
 	
-	
-	
+	system("pause");
 	return 0;
 }

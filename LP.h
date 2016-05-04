@@ -13,11 +13,12 @@
 
 using namespace std;
 
+// GlobalVar.cpp
 const int MAX_FILENAME = 100;
-char Filename[MAX_FILENAME];
-char Enabled_RHS[] = "";
-char Enabled_RANGES[] = "";
-char Enabled_BOUNDS[] = "";
+extern char Filename[MAX_FILENAME];
+extern char Enabled_RHS[];
+extern char Enabled_RANGES[];
+extern char Enabled_BOUNDS[];
 
 // Problem Related
 const int MAX_PROBLEM_NAME = 100;
@@ -26,17 +27,18 @@ const double MaxPositive = 1e+30;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
 
-char Problem_Name[MAX_PROBLEM_NAME];
-int n_Row, n_Col, n_Element;
-vector <char> Row_Type;
-vector <double> V_Cost; // c, Cost Row
-vector < map <int, double> > V_Matrix; // A, Column Majored Matrix
-vector <double> V_RHS; // b, RHS
-vector <double> V_RHS_r; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
-vector <double> V_LB, V_UB; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
+extern char Problem_Name[MAX_PROBLEM_NAME];
+extern int n_Row, n_Col, n_Element;
+extern vector <char> Row_Type;
+extern vector <double> V_Cost; // c, Cost Row
+extern vector < map <int, double> > V_Matrix; // A, Column Majored Matrix
+extern vector <double> V_RHS; // b, RHS
+extern vector <double> V_RHS_r; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
+extern vector <double> V_LB, V_UB; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
 
 // Helper.cpp
 void CheckError(int ExitID, char* ErrMsg);
+clock_t GetTime();
 
 // Init.cpp
 int Prog_Init();
