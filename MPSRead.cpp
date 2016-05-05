@@ -51,7 +51,7 @@ void MPS_ReadLine()
 void MPS_NAME()
 {
 	if (strncmp(Buf, "NAME", 4))
-		CheckError(1, "MPS_ReadFile: Expected NAME!");
+		CheckError(1, "MPS_NAME: Expected NAME!");
 	MPS_CopyName(Problem_Name, Buf + 14);
 	printf("    NAME SECTION\n");
 	printf("        NAME = \"%s\"\n", Problem_Name);
@@ -61,7 +61,7 @@ void MPS_NAME()
 void MPS_ROWS()
 {
 	if (strncmp(Buf, "ROWS", 4))
-		CheckError(1, "MPS_ReadFile: Expected ROWS!");
+		CheckError(1, "MPS_ROWS: Expected ROWS!");
 	printf("    ROWS SECTION\n");
 	while (1)
 	{
@@ -97,13 +97,13 @@ void MPS_ROWS()
 	}
 	printf("        %d Rows Read (Objective Row Excluded)\n", n_Row);
 	if (! Obj_Row)
-		CheckError(1, "MPS_ReadFile: No Objective Row!");
+		CheckError(1, "MPS_ROWS: No Objective Row!");
 }
 
 void MPS_COLUMNS()
 {
 	if (strncmp(Buf, "COLUMNS", 7))
-		CheckError(1, "MPS_ReadFile: Expected COLUMNS!");
+		CheckError(1, "MPS_COLUMNS: Expected COLUMNS!");
 	printf("    COLUMNS SECTION\n");
 	while (1)
 	{
@@ -327,7 +327,7 @@ void MPS_BOUNDS()
 void MPS_ENDATA()
 {
 	if (strncmp(Buf, "ENDATA", 6))
-		CheckError(1, "MPS_ReadFile: Expected ENDATA!");
+		CheckError(1, "MPS_ENDATA: Expected ENDATA!");
 }
 
 int MPS_ReadFile()
@@ -338,6 +338,7 @@ int MPS_ReadFile()
 	Hash_Col.Init(MAX_COLS, 999983);
 	Obj_Row = 0;
 	n_Element = 0;
+	V_Cost_Intercept = 0;
 	
 	printf("ReadMPSFile BEGIN\n");
 	Fin = fopen(Filename, "r");

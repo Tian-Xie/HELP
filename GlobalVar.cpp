@@ -16,3 +16,8 @@ double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= 
 // A, Column Majored Matrix, Linked List
 long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
 double V_Matrix_Value[MAX_ELEMENTS];
+
+// Crushing
+double V_Cost_Intercept; // After crushing, objective may have nonzero intercept
+int V_Crushing_Times[MAX_COLS];
+double V_Crushing_Add[MAX_COLS]; // Output (x[i] * V_Crushing_Times[i] + V_Crushing_Add[i])

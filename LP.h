@@ -27,6 +27,7 @@ const int MAX_ELEMENTS = 10000000;
 const int MAX_PROBLEM_NAME = 100;
 const double Input_Tolerance = 1e-8;
 const double MaxPositive = 1e+30;
+const double MaxFinite = 0.99995 * MaxPositive;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
 
@@ -40,6 +41,13 @@ extern double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x
 // A, Column Majored Matrix, Linked List
 extern long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
 extern double V_Matrix_Value[MAX_ELEMENTS];
+// Crushing
+extern double V_Cost_Intercept; // After crushing, objective may have nonzero intercept
+extern int V_Crushing_Times[MAX_COLS];
+extern double V_Crushing_Add[MAX_COLS]; // Output (x[i] * V_Crushing_Times[i] + V_Crushing_Add[i])
+
+// Crushing.cpp
+int CRUSH_Main();
 
 // Helper.cpp
 void CheckError(int ExitID, char* ErrMsg);
