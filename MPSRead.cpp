@@ -1,11 +1,12 @@
 #include "LP.h"
+#include "Hash.h"
 
 const int CARD_POS[] = {4, 14, 24, 39, 49};
 FILE* Fin;
 const int MAX_LINE_LENGTH = 256;
 char Buf[MAX_LINE_LENGTH];
 unsigned long long Obj_Row;
-map <unsigned long long, int> Map_Row, Map_Col;
+THashTable Hash_Row, Hash_Col;
 
 void MPS_CopyName(char* Dest, char* Src)
 {
@@ -74,11 +75,6 @@ void MPS_ROWS()
 			continue;
 		}
 		unsigned long long Hash = MPS_HashCode(Buf + CARD_POS[0]);
-		if (Map_Row.find(Hash) != Map_Row.end())
-		{
-			printf("        Warning: Duplicate Row Name, HashCode = %llu, Ignored.\n", Hash);
-			continue;
-		}
 		if (Type == 'N')
 		{
 			if (Obj_Row)
@@ -87,12 +83,16 @@ void MPS_ROWS()
 				continue;
 			}
 			Obj_Row = Hash; // Store Objective Row's Hash Value
-			Map_Row[Hash] = -1; // -1: Objective
+			Hash_Row.Insert(Hash, HASH_OBJECTIVE); // Objective
 			continue;
 		}
-		Map_Row[Hash] = n_Row;
-		Row_Type.push_back(Type);
-		V_RHS.push_back(0.0);
+		if (Hash_Row.Insert(Hash, n_Row) == HASH_INSERT_FOUND)
+		{
+			printf("        Warning: Duplicate Row Name, HashCode = %llu, Ignored.\n", Hash);
+			continue;
+		}
+		Row_Type[n_Row] = Type;
+		V_RHS[n_Row] = 0.0;
 		n_Row ++;
 	}
 	printf("        %d Rows Read (Objective Row Excluded)\n", n_Row);
@@ -111,30 +111,28 @@ void MPS_COLUMNS()
 		if (Buf[0] != ' ') // End of COLUMNS
 			break;
 		unsigned long long ColHash = MPS_HashCode(Buf + CARD_POS[0]);
-		int ColID;
-		if (Map_Col.find(ColHash) == Map_Col.end())
+		int ColID = Hash_Col.Find(ColHash);
+		if (ColID == HASH_NOT_FOUND)
 		{
-			Map_Col[ColHash] = n_Col;
+			Hash_Col.Insert(ColHash, n_Col);
 			ColID = n_Col;
-			V_Cost.push_back(0.0);
-			V_Matrix.push_back(map <int, double> ());
+			V_Cost[n_Col] = 0.0;
+			V_Matrix_Head[n_Col] = -1;
 			n_Col ++;
 		}
-		else
-			ColID = Map_Col[ColHash];
 
 		int CurCardLen = strlen(Buf);
 		for (int ip = 1; ip <= 3 && CARD_POS[ip] < CurCardLen; ip += 2)
 		{
 			unsigned long long RowHash = MPS_HashCode(Buf + CARD_POS[ip]);
-			if (Map_Row.find(RowHash) == Map_Row.end())
+			int RowID = Hash_Row.Find(RowHash);
+			if (RowID == HASH_NOT_FOUND)
 			{
 				printf("        Warning: Row Name Not Found, HashCode = %llu, Ignored.\n", RowHash);
 				continue;
 			}
-			int RowID = Map_Row[RowHash];
 			double RCValue = atof(Buf + CARD_POS[ip + 1]);
-			if (RowID == -1) // Objective, Minimization
+			if (RowID == HASH_OBJECTIVE) // Objective, Minimization
 			{
 				V_Cost[ColID] = RCValue;
 				continue;
@@ -144,15 +142,12 @@ void MPS_COLUMNS()
 				printf("        Warning: Zero Element Found, %.10lf, Ignored.\n", RCValue);
 				continue;
 			}
-			if (V_Matrix[ColID].find(RowID) != V_Matrix[ColID].end())
-			{
-				printf("        Warning: Duplicate Element, RowHashCode = %llu, ColHashCode = %llu, Ignored.\n", RowHash, ColHash);
-				continue;
-			}
-			V_Matrix[ColID][RowID] = RCValue;
+			// Cannot check duplicate element
+			V_Matrix_Row[n_Element] = RowID;
+			V_Matrix_Value[n_Element] = RCValue;
+			V_Matrix_Next[n_Element] = V_Matrix_Head[ColID];
+			V_Matrix_Head[ColID] = n_Element;
 			n_Element ++;
-			if (n_Element % 10000 == 0)
-				printf("[%d]\n", n_Element);
 		}
 	}
 	printf("        %d Columns and %d Elements Read (Objective Row Excluded)\n", n_Col, n_Element);
@@ -180,14 +175,14 @@ void MPS_RHS()
 		for (int ip = 1; ip <= 3 && CARD_POS[ip] < CurCardLen; ip += 2)
 		{
 			unsigned long long RowHash = MPS_HashCode(Buf + CARD_POS[ip]);
-			if (Map_Row.find(RowHash) == Map_Row.end())
+			int RowID = Hash_Row.Find(RowHash);
+			if (RowID == HASH_NOT_FOUND)
 			{
 				printf("        Warning: Row Name Not Found, HashCode = %llu, Ignored.\n", RowHash);
 				continue;
 			}
-			int RowID = Map_Row[RowHash];
 			double RCValue = atof(Buf + CARD_POS[ip + 1]);
-			if (RowID == -1) // Objective, Minimization
+			if (RowID == HASH_OBJECTIVE) // Objective, Minimization
 			{
 				printf("        Warning: Row Name Cannot Be Cost Row, Ignored.\n");
 				continue;
@@ -206,7 +201,8 @@ void MPS_RHS()
 
 void MPS_RANGES()
 {
-	V_RHS_r = V_RHS;
+	for (int i = 0; i < n_Row; i ++)
+		V_RHS_r[i] = V_RHS[i];
 	if (strncmp(Buf, "RANGES", 6))
 	{
 		printf("    NULL RANGES Section!\n");
@@ -227,14 +223,14 @@ void MPS_RANGES()
 		for (int ip = 1; ip <= 3 && CARD_POS[ip] < CurCardLen; ip += 2)
 		{
 			unsigned long long RowHash = MPS_HashCode(Buf + CARD_POS[ip]);
-			if (Map_Row.find(RowHash) == Map_Row.end())
+			int RowID = Hash_Row.Find(RowHash);
+			if (RowID == HASH_NOT_FOUND)
 			{
 				printf("        Warning: Row Name Not Found, HashCode = %llu, Ignored.\n", RowHash);
 				continue;
 			}
-			int RowID = Map_Row[RowHash];
 			double Value = atof(Buf + CARD_POS[ip + 1]);
-			if (RowID == -1) // Objective, Minimization
+			if (RowID == HASH_OBJECTIVE) // Objective, Minimization
 			{
 				printf("        Warning: Row Name Cannot Be Cost Row, Ignored.\n");
 				continue;
@@ -269,8 +265,6 @@ void MPS_RANGES()
 
 void MPS_BOUNDS()
 {
-	V_LB.resize(n_Col);
-	V_UB.resize(n_Col);
 	for (int i = 0; i < n_Col; i ++)
 	{
 		V_LB[i] = Var_Lower_Bound;
@@ -294,12 +288,12 @@ void MPS_BOUNDS()
 			continue;
 		
 		unsigned long long ColHash = MPS_HashCode(Buf + CARD_POS[1]);
-		if (Map_Col.find(ColHash) == Map_Col.end())
+		int ColID = Hash_Col.Find(ColHash);
+		if (ColID == HASH_NOT_FOUND)
 		{
 			printf("        Warning: Column Name Not Found, HashCode = %llu, Ignored.\n", ColHash);
 			continue;
 		}
-		int ColID = Map_Col[ColHash];
 		double Value = 0.0;
 		if (strlen(Buf) > 24)
 			Value = atof(Buf + CARD_POS[2]);
@@ -340,15 +334,11 @@ int MPS_ReadFile()
 {
 	n_Row = 0;
 	n_Col = 0;
-	Map_Row.clear();
-	Map_Col.clear();
+	Hash_Row.Init(MAX_ROWS, 999983);
+	Hash_Col.Init(MAX_COLS, 999983);
 	Obj_Row = 0;
 	n_Element = 0;
-	Row_Type.clear();
-	V_Cost.clear();
-	V_Matrix.clear();
-	V_RHS.clear();
-
+	
 	printf("ReadMPSFile BEGIN\n");
 	Fin = fopen(Filename, "r");
 	MPS_ReadLine();
@@ -362,6 +352,8 @@ int MPS_ReadFile()
 	MPS_ENDATA();
 	
 	fclose(Fin);
+	Hash_Row.Release();
+	Hash_Col.Release();
 	printf("ReadMPSFile END\n");
 	return 0;
 }

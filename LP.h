@@ -21,6 +21,9 @@ extern char Enabled_RANGES[];
 extern char Enabled_BOUNDS[];
 
 // Problem Related
+const int MAX_ROWS = 10000;
+const int MAX_COLS = 10000;
+const int MAX_ELEMENTS = 10000000;
 const int MAX_PROBLEM_NAME = 100;
 const double Input_Tolerance = 1e-8;
 const double MaxPositive = 1e+30;
@@ -29,12 +32,14 @@ const double Var_Upper_Bound = MaxPositive;
 
 extern char Problem_Name[MAX_PROBLEM_NAME];
 extern int n_Row, n_Col, n_Element;
-extern vector <char> Row_Type;
-extern vector <double> V_Cost; // c, Cost Row
-extern vector < map <int, double> > V_Matrix; // A, Column Majored Matrix
-extern vector <double> V_RHS; // b, RHS
-extern vector <double> V_RHS_r; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
-extern vector <double> V_LB, V_UB; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
+extern char Row_Type[MAX_ROWS];
+extern double V_Cost[MAX_COLS]; // c, Cost Row
+extern double V_RHS[MAX_ROWS]; // b, RHS
+extern double V_RHS_r[MAX_ROWS]; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
+extern double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
+// A, Column Majored Matrix, Linked List
+extern long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
+extern double V_Matrix_Value[MAX_ELEMENTS];
 
 // Helper.cpp
 void CheckError(int ExitID, char* ErrMsg);

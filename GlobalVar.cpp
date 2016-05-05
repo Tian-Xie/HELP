@@ -8,9 +8,11 @@ char Enabled_BOUNDS[] = "";
 // Problem Related
 char Problem_Name[MAX_PROBLEM_NAME];
 int n_Row, n_Col, n_Element;
-vector <char> Row_Type;
-vector <double> V_Cost; // c, Cost Row
-vector < map <int, double> > V_Matrix; // A, Column Majored Matrix
-vector <double> V_RHS; // b, RHS
-vector <double> V_RHS_r; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
-vector <double> V_LB, V_UB; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
+char Row_Type[MAX_ROWS];
+double V_Cost[MAX_COLS]; // c, Cost Row
+double V_RHS[MAX_ROWS]; // b, RHS
+double V_RHS_r[MAX_ROWS]; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
+double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
+// A, Column Majored Matrix, Linked List
+long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
+double V_Matrix_Value[MAX_ELEMENTS];
