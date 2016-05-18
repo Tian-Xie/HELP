@@ -41,10 +41,18 @@ extern double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x
 // A, Column Majored Matrix, Linked List
 extern long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
 extern double V_Matrix_Value[MAX_ELEMENTS];
+
 // Crushing
 extern double V_Cost_Intercept; // After crushing, objective may have nonzero intercept
 extern int V_Crushing_Times[MAX_COLS];
 extern double V_Crushing_Add[MAX_COLS]; // Output (x[i] * V_Crushing_Times[i] + V_Crushing_Add[i])
+
+// Presolve
+extern int n_LB, n_UB, n_FR; 
+// Rearranged as: (a) x[0 ~ (n_UB - 1)]: With LB and UB; 
+//                (b) x[n_UB ~ (n_LB - 1)]: With LB only; 
+//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free.
+extern int RecoverOrder[MAX_COLS], TransOrder[MAX_COLS];
 
 // Crushing.cpp
 int CRUSH_Main();
@@ -52,6 +60,19 @@ int CRUSH_Main();
 // Helper.cpp
 void CheckError(int ExitID, char* ErrMsg);
 clock_t GetTime();
+void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
+void SetATimesVector(int Transpose, int Sign, double* v, double* dest); // dest = dest + Sign * A * v, or dest = dest + Sign * A^T * v, Sign \in {1, -1}
+int CHOLMOD_Construct();
+int CHOLMOD_Destruct();
+int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2);
+
+// HSDSolver.cpp
+const int HSD_STATUS_OK = 0;
+const int HSD_STATUS_STALLED = 1;
+const int HSD_STATUS_ITER_LIMIT = 2;
+const int HSD_STATUS_UNKNOWN_ERROR = 3;
+int HSD_Init();
+int HSD_Main();
 
 // Init.cpp
 int Prog_Init();
@@ -59,5 +80,7 @@ int Prog_Init();
 // MPSRead.cpp
 int MPS_ReadFile();
 
-#endif
+// Presolve.cpp
+int Presolve_Main();
 
+#endif

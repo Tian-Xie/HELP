@@ -64,9 +64,9 @@ int CRUSH_Main()
 		n_Col ++;
 
 		V_Matrix_Row[n_Element] = Row;
-		if (Row_Type[Row] == 'L')
+		if (Row_Type[Row] == 'L') // A(i, :)' * x + s = b(i), s >= 0
 			V_Matrix_Value[n_Element] = 1.0;
-		else if (Row_Type[Row] == 'G')
+		else if (Row_Type[Row] == 'G') // A(i, :)' * x - s = b(i), s >= 0
 			V_Matrix_Value[n_Element] = -1.0;
 		else if (Row_Type[Row] == 'R')
 		{

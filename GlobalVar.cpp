@@ -21,3 +21,10 @@ double V_Matrix_Value[MAX_ELEMENTS];
 double V_Cost_Intercept; // After crushing, objective may have nonzero intercept
 int V_Crushing_Times[MAX_COLS];
 double V_Crushing_Add[MAX_COLS]; // Output (x[i] * V_Crushing_Times[i] + V_Crushing_Add[i])
+
+// Presolve
+int n_LB, n_UB, n_FR; 
+// Rearranged as: (a) x[0 ~ (n_UB - 1)]: With LB and UB; 
+//                (b) x[n_UB ~ (n_LB - 1)]: With LB only; 
+//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free.
+int RecoverOrder[MAX_COLS], TransOrder[MAX_COLS];
