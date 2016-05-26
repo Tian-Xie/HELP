@@ -1,3 +1,15 @@
+/*****************************************************************************
+*  LPSolver, An experimental implementation of Homogeneous and Self-Dual     *
+*  Algorithm for Linear Programming.                                         *
+*  Author: Tian Xie (Research Center for Management Science and Information  *
+*          Analytics, Shanghai University of Finance and Economics)          *
+*  Credits: (1) Fundamental implementation idea originated from COPL_LP.     *
+*               (Xiong Zhang and Yinyu Ye)                                   *
+*               See http://web.stanford.edu/~yyye/Col.html .                 *
+*           (2) Sparse Cholesky Decomposition is supported by CHOLMOD.       *
+*               (Timothy A. Davis)                                           *
+******************************************************************************/
+
 #ifndef _HASH_H
 
 #define _HASH_H
@@ -25,4 +37,4 @@ public:
 	int Insert(unsigned long long x, long _Row);
 };
 
-#endif _HASH_H
+#endif
