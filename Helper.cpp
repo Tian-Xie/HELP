@@ -62,12 +62,14 @@ cholmod_factor* CHOL_Fac;
 
 int CHOLMOD_Construct()
 {
-	cholmod_start(&CHOL_Com); // Start CHOLMOD
+printf("SuiteSparse_long: %d\n", sizeof(SuiteSparse_long));
+printf("long: %d\n", sizeof(long));
+	cholmod_l_start(&CHOL_Com); // Start CHOLMOD
 	// Initially open all options
 	CHOL_Com.nmethods = 9;
 	CHOLMOD_Setting(&CHOL_Com); // In Setting_CPU.cpp / Setting_CPU.cpp
 
-	cholmod_triplet* Triplet = cholmod_allocate_triplet(n_Row, n_Col, n_Element, 0, CHOLMOD_REAL, &CHOL_Com); // stype == 0, asymmetric
+	cholmod_triplet* Triplet = cholmod_l_allocate_triplet(n_Row, n_Col, n_Element, 0, CHOLMOD_REAL, &CHOL_Com); // stype == 0, asymmetric
 	int k = 0;
 	Triplet -> nnz = n_Element;
 #ifdef PRINT_DEBUG
@@ -76,43 +78,43 @@ int CHOLMOD_Construct()
 	for (int Col = 0; Col < n_Col; Col ++)
 		for (int j = V_Matrix_Head[Col]; j != -1; j = V_Matrix_Next[j])
 		{
-			((int*) Triplet -> i)[k] = V_Matrix_Row[j];
-			((int*) Triplet -> j)[k] = Col;
+			((long*) Triplet -> i)[k] = V_Matrix_Row[j];
+			((long*) Triplet -> j)[k] = Col;
 			((double*) Triplet -> x)[k] = V_Matrix_Value[j];
 #ifdef PRINT_DEBUG
-			printf("A(%d, %d) = %f;\n", ((int*) Triplet -> i)[k] + 1, ((int*) Triplet -> j)[k] + 1, ((double*) Triplet -> x)[k]);
+			printf("A(%d, %d) = %f;\n", ((long*) Triplet -> i)[k] + 1, ((long*) Triplet -> j)[k] + 1, ((double*) Triplet -> x)[k]);
 #endif
 			k ++;
 		}
-	CHOL_A = cholmod_triplet_to_sparse(Triplet, n_Element, &CHOL_Com);
-	cholmod_free_triplet(&Triplet, &CHOL_Com);
-	cholmod_sort(CHOL_A, &CHOL_Com);
+	CHOL_A = cholmod_l_triplet_to_sparse(Triplet, n_Element, &CHOL_Com);
+	cholmod_l_free_triplet(&Triplet, &CHOL_Com);
+	cholmod_l_sort(CHOL_A, &CHOL_Com);
 
-	CHOL_Vector_Row = cholmod_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
-	CHOL_Vector_Col = cholmod_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
-	CHOL_Vector_Row_Reorder = cholmod_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
-	CHOL_Vector_Col_Reorder = cholmod_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
-	CHOL_TIMES_Row = cholmod_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
-	CHOL_TIMES_Col = cholmod_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_Vector_Row = cholmod_l_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_Vector_Col = cholmod_l_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_Vector_Row_Reorder = cholmod_l_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_Vector_Col_Reorder = cholmod_l_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_TIMES_Row = cholmod_l_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
+	CHOL_TIMES_Col = cholmod_l_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
 	CHOL_Fac = NULL;
 	return 0;
 }
 
 int CHOLMOD_Destruct()
 {
-	cholmod_free_sparse(&CHOL_A, &CHOL_Com);
-	cholmod_free_dense(&CHOL_Vector_Row, &CHOL_Com);
-	cholmod_free_dense(&CHOL_Vector_Col, &CHOL_Com);
-	cholmod_free_dense(&CHOL_Vector_Row_Reorder, &CHOL_Com);
-	cholmod_free_dense(&CHOL_Vector_Col_Reorder, &CHOL_Com);
-	cholmod_free_dense(&CHOL_TIMES_Row, &CHOL_Com);
-	cholmod_free_dense(&CHOL_TIMES_Col, &CHOL_Com);
+	cholmod_l_free_sparse(&CHOL_A, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_Vector_Row, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_Vector_Col, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_Vector_Row_Reorder, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_Vector_Col_Reorder, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_TIMES_Row, &CHOL_Com);
+	cholmod_l_free_dense(&CHOL_TIMES_Col, &CHOL_Com);
 	if (CHOL_Fac)
 	{
-		cholmod_free_factor(&CHOL_Fac, &CHOL_Com);
+		cholmod_l_free_factor(&CHOL_Fac, &CHOL_Com);
 		CHOL_Fac = NULL;
 	}
-	cholmod_finish(&CHOL_Com); // Finish CHOLMOD
+	cholmod_l_finish(&CHOL_Com); // Finish CHOLMOD
 	return 0;
 }
 
@@ -128,7 +130,7 @@ void SetATimesVector(int Transpose, double alpha, double beta, double* v, double
 			((double*) CHOL_TIMES_Row -> x)[i] = v[i];
 		for (int i = 0; i < n_Col; i ++)
 			((double*) CHOL_TIMES_Col -> x)[i] = dest[i];
-		cholmod_sdmult(CHOL_A, Transpose, SDMULT_ALPHA, SDMULT_BETA, CHOL_TIMES_Row, CHOL_TIMES_Col, &CHOL_Com);
+		cholmod_l_sdmult(CHOL_A, Transpose, SDMULT_ALPHA, SDMULT_BETA, CHOL_TIMES_Row, CHOL_TIMES_Col, &CHOL_Com);
 		for (int i = 0; i < n_Col; i ++)
 			dest[i] = ((double*) CHOL_TIMES_Col -> x)[i];
 	}
@@ -138,7 +140,7 @@ void SetATimesVector(int Transpose, double alpha, double beta, double* v, double
 			((double*) CHOL_TIMES_Col -> x)[i] = v[i];
 		for (int i = 0; i < n_Row; i ++)
 			((double*) CHOL_TIMES_Row -> x)[i] = dest[i];
-		cholmod_sdmult(CHOL_A, Transpose, SDMULT_ALPHA, SDMULT_BETA, CHOL_TIMES_Col, CHOL_TIMES_Row, &CHOL_Com);
+		cholmod_l_sdmult(CHOL_A, Transpose, SDMULT_ALPHA, SDMULT_BETA, CHOL_TIMES_Col, CHOL_TIMES_Row, &CHOL_Com);
 		for (int i = 0; i < n_Row; i ++)
 			dest[i] = ((double*) CHOL_TIMES_Row -> x)[i];
 	}
@@ -147,22 +149,31 @@ void SetATimesVector(int Transpose, double alpha, double beta, double* v, double
 // Renew CHOL_Fac: ADA^T
 void RenewCholesky(double* d)
 {
+#ifdef DEBUG_TRACK
+printf("In RenewCholesky\n");
+#endif
 	if (CHOL_Fac)
 	{
-		cholmod_free_factor(&CHOL_Fac, &CHOL_Com);
+		cholmod_l_free_factor(&CHOL_Fac, &CHOL_Com);
 		CHOL_Fac = NULL;
 	}
 	// D^(-1/2) A
 	for (int i = 0; i < n_Col; i ++)
 		((double*) CHOL_Vector_Col -> x)[i] = 1.0 / sqrt(d[i]);
-	cholmod_sparse* DsqrtinvA = cholmod_copy_sparse(CHOL_A, &CHOL_Com);
-	cholmod_scale(CHOL_Vector_Col, CHOLMOD_COL, DsqrtinvA, &CHOL_Com);
+	cholmod_sparse* DsqrtinvA = cholmod_l_copy_sparse(CHOL_A, &CHOL_Com);
+	cholmod_l_scale(CHOL_Vector_Col, CHOLMOD_COL, DsqrtinvA, &CHOL_Com);
 
 #ifdef PRINT_TIME
 	clock_t Tm;
 	Tm = GetTime();
 #endif
-	CHOL_Fac = cholmod_analyze(DsqrtinvA, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("RenewCholesky: Before Analyze\n");
+#endif
+    CHOL_Fac = cholmod_l_analyze(DsqrtinvA, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("RenewCholesky: After Analyze\n");
+#endif
 #ifdef PRINT_TIME
 	printf("Analyze: %d ms\n", GetTime() - Tm);
 #endif
@@ -170,15 +181,27 @@ void RenewCholesky(double* d)
 	{
 		CHOL_Com.nmethods = 1;
 		CHOL_Com.method[0] = CHOL_Com.method[CHOL_Com.selected];
+#ifdef DEBUG_TRACK
+printf("RenewCholesky: Best Method = %d\n", CHOL_Com.selected);
+#endif
 	}
 #ifdef PRINT_TIME
 	Tm = GetTime();
 #endif
-	cholmod_factorize(DsqrtinvA, CHOL_Fac, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("RenewCholesky: Before Factorize\n");
+#endif
+	cholmod_l_factorize(DsqrtinvA, CHOL_Fac, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("RenewCholesky: After Factorize\n");
+#endif
 #ifdef PRINT_TIME
 	printf("Factorize: %d ms\n", GetTime() - Tm);
 #endif
-	cholmod_free_sparse(&DsqrtinvA, &CHOL_Com);
+	cholmod_l_free_sparse(&DsqrtinvA, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("Out RenewCholesky\n");
+#endif
 }
 
 // Solve [ D  A^T ][x_1] == [b_1]
@@ -189,6 +212,10 @@ void RenewCholesky(double* d)
 // Need to call RenewCholesky(d) if ADA^T is not factorized yet!
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2)
 {
+#ifdef DEBUG_TRACK
+printf("In SolveLinearEquation\n");
+#endif
+
 	double SDMULT_POSITIVE[] = {1, 0};
 	double SDMULT_NEGATIVE[] = {-1, 0};
 	
@@ -207,10 +234,10 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	for (int i = 0; i < n_Col; i ++)
 		((double*) CHOL_Vector_Col -> x)[i] = b_1[i] / d[i];
 	// A * (D^(-1) b_1) - b_2
-	cholmod_sdmult(CHOL_A, 0, SDMULT_POSITIVE, SDMULT_POSITIVE, CHOL_Vector_Col, CHOL_Vector_Row, &CHOL_Com);
+	cholmod_l_sdmult(CHOL_A, 0, SDMULT_POSITIVE, SDMULT_POSITIVE, CHOL_Vector_Col, CHOL_Vector_Row, &CHOL_Com);
 	for (int i = 0; i < n_Row; i ++)
 	{
-		((double*) CHOL_Vector_Row_Reorder -> x)[i] = ((double*) CHOL_Vector_Row -> x)[((int *) CHOL_Fac -> Perm) [i]];
+		((double*) CHOL_Vector_Row_Reorder -> x)[i] = ((double*) CHOL_Vector_Row -> x)[((long *) CHOL_Fac -> Perm) [i]];
 #ifdef PRINT_DEBUG
 		printf("%d\n", ((int *) CHOL_Fac -> Perm) [i]);
 #endif
@@ -222,19 +249,26 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 #endif
 	cholmod_dense* X2;
 	cholmod_dense* Tmp;
-	if (CHOL_Fac -> is_ll)
+	/*if (CHOL_Fac -> is_ll)
 	{
-		Tmp = cholmod_solve(CHOLMOD_L, CHOL_Fac, CHOL_Vector_Row_Reorder, &CHOL_Com);
-		X2 = cholmod_solve(CHOLMOD_Lt, CHOL_Fac, Tmp, &CHOL_Com);
-		cholmod_free_dense(&Tmp, &CHOL_Com);
+		Tmp = cholmod_l_solve(CHOLMOD_L, CHOL_Fac, CHOL_Vector_Row_Reorder, &CHOL_Com);
+		X2 = cholmod_l_solve(CHOLMOD_Lt, CHOL_Fac, Tmp, &CHOL_Com);
+		cholmod_l_free_dense(&Tmp, &CHOL_Com);
 	}
-	else
-		X2 = cholmod_solve(CHOLMOD_LDLt, CHOL_Fac, CHOL_Vector_Row_Reorder, &CHOL_Com);
+	else*/
+#ifdef DEBUG_TRACK
+printf("SolveLinearEquation: Before Solve\n");
+#endif
+		X2 = cholmod_l_solve(CHOLMOD_LDLt, CHOL_Fac, CHOL_Vector_Row_Reorder, &CHOL_Com);
+#ifdef DEBUG_TRACK
+printf("SolveLinearEquation: After Solve\n");
+#endif
+
 #ifdef PRINT_TIME
 	printf("Solve: %d ms\n", GetTime() - Tm);
 #endif
 	for (int i = 0; i < n_Row; i ++)
-		x_2[((int *) CHOL_Fac -> Perm) [i]] = ((double*) X2 -> x)[i];
+		x_2[((long *) CHOL_Fac -> Perm) [i]] = ((double*) X2 -> x)[i];
 	for (int i = 0; i < n_Row; i ++)
 		((double*) X2 -> x)[i] = x_2[i];
 #ifdef PRINT_DEBUG
@@ -245,10 +279,14 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	// b_1 - A^T x_2
 	for (int i = 0; i < n_Col; i ++)
 		((double*) CHOL_Vector_Col -> x)[i] = b_1[i];
-	cholmod_sdmult(CHOL_A, 1, SDMULT_NEGATIVE, SDMULT_POSITIVE, X2, CHOL_Vector_Col, &CHOL_Com);
+	cholmod_l_sdmult(CHOL_A, 1, SDMULT_NEGATIVE, SDMULT_POSITIVE, X2, CHOL_Vector_Col, &CHOL_Com);
 	// Let x_1 = D^(-1) (b_1 - A^T x_2)
 	for (int i = 0; i < n_Col; i ++)
 		x_1[i] = ((double*) CHOL_Vector_Col -> x)[i] / d[i];
-	cholmod_free_dense(&X2, &CHOL_Com);
+	cholmod_l_free_dense(&X2, &CHOL_Com);
+	
+#ifdef DEBUG_TRACK
+printf("Out SolveLinearEquation\n");
+#endif
 	return 0;
 }

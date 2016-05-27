@@ -50,6 +50,9 @@ double HSD_rfval; // rfval = (1 + n_LB + n_UB) * min(x_j * z_j, xu_k * zu_k, tau
 // rfval = (1 + n_LB + n_UB) * min(x_j * z_j, xu_k * zu_k, tau * kappa) / sum(x_j * z_j, xu_k * zu_k, tau * kappa)
 void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p, double* r_d, double& r_g, double& mu, double& rfval)
 {
+#ifdef DEBUG_TRACK
+printf("In HSD_Calc_Newton_Parameters\n");
+#endif
 	double xz_min = HSD_tau * HSD_kappa; // min(x_j * z_j, xu_k * zu_k, tau * kappa)
 	double xz_sum = xz_min; // sum(x_j * z_j, xu_k * zu_k, tau * kappa)
 	for (int i = 0; i < n_LB; i ++)
@@ -89,7 +92,7 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 
 	mu = xz_sum / (1.0 + n_LB + n_UB);
 	rfval = (1.0 + n_LB + n_UB) * xz_min / xz_sum;
-
+	
 	// r_p = tau * b - A * x
 	SetScaledVector(n_Row, HSD_tau, V_RHS, r_p);
 	SetATimesVector(false, -1, 1, HSD_x, r_p);
@@ -133,8 +136,14 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 	HSD_primal_infeas = sqrt(HSD_rp_norm2_sq) / (HSD_tau + sqrt(DotProduct(n_Col, HSD_x, HSD_x)));
 	// Dual Infeasibility = ||r_d||_2 / (tau + sqrt(sum_LB(z_j^2) + sum_UB(zu_k^2 + yu_k^2) + sum(y_j^2)))
 	HSD_dual_infeas = sqrt(HSD_rd_norm2_sq) / (HSD_tau + sqrt(DotProduct(n_LB, HSD_z, HSD_z) + DotProduct(n_UB, HSD_zu, HSD_zu) + DotProduct(n_UB, HSD_yu, HSD_yu) + DotProduct(n_Row, HSD_y, HSD_y)));
+#ifdef DEBUG_TRACK
+printf("HSD_tau = %e, HSD_kappa = %e, HSD_inf0 = %e\n", HSD_tau, HSD_kappa, HSD_inf0);
+#endif
 	// Infe = (tau / kappa) / (tau0 / kappa0)
 	HSD_infe = HSD_tau / (HSD_kappa * HSD_inf0);
+#ifdef DEBUG_TRACK
+printf("Out HSD_Calc_Newton_Parameters\n");
+#endif
 }
 
 double HSD_SLE_RHS1[MAX_COLS], HSD_SLE_RHS2[MAX_ROWS];
@@ -232,6 +241,9 @@ int HSD_Search_Direction(double eta, double* D, double* D_u, double D_g, double*
 						 double* dx, double* dxu, double& dtau, double* dy, double* dyu, double* dz, double* dzu, double& dkappa, 
 						 double& r_p_norm, double& r_d_norm, double& r_g_norm)
 {
+#ifdef DEBUG_TRACK
+printf("In HSD_Search_Direction\n");
+#endif
 	// Use the relation that
 	//     dz = X^{-1} (hat_r_xz - S dx)
 	//     dkappa = (hat_r_tk - kappa dtau)
@@ -405,7 +417,10 @@ int HSD_Search_Direction(double eta, double* D, double* D_u, double D_g, double*
 		Tmp += HSD_xf[i] * HSD_x[n_LB + i] * HSD_x[n_LB + i];
 	r_g_norm = eta * r_g + dkappa - HSD_MixDots(dx, dy, dyu) - HSD_rho * Tmp * dtau / (HSD_tau * HSD_tau);
 	r_g_norm = r_g_norm * r_g_norm;
-
+	
+#ifdef DEBUG_TRACK
+printf("Out HSD_Search_Direction\n");
+#endif
 	// Some successful criteria ?????
 	if (r_p_norm + r_d_norm <= 1e-20 || r_p_norm + r_d_norm + r_g_norm <= HSD_sum_r_norm * 0.1)
 		return 1;
@@ -558,7 +573,7 @@ void HSD_GetInitPoint()
 	double d_tau = 0.0;
 	double n_All = 1.0 + n_LB + n_UB;
 	double mu = (DotProduct(n_LB, HSD_x, HSD_z) + DotProduct(n_UB, HSD_xu, HSD_zu) + HSD_tau * HSD_kappa) / n_All;
-	double inf0 = HSD_tau / HSD_kappa;
+	HSD_inf0 = HSD_tau / HSD_kappa;
 
 	HSD_rho = 1.0;
 	HSD_Calc_Newton_Parameters(HSD_D, HSD_D_u, HSD_D_g, HSD_r_p, HSD_r_d, HSD_r_g, HSD_mu, HSD_rfval);
@@ -669,6 +684,9 @@ void HSD_Solving()
 	int Iter;
 	for (Iter = 0; Iter < Max_Iterations; Iter ++)
 	{
+#ifdef DEBUG_TRACK
+printf("Into Iteration: Iter = %d\n", Iter);
+#endif
 		double rho = max(HSD_mu / mu0, 1e-12);
 		// For free variable, xf_i = 1 / (1 + 10 |x_i|)
 		for (int i = 0; i < n_FR; i ++)
