@@ -12,6 +12,7 @@
 
 #include "LP.h"
 #include "UseCholmod.h"
+#include <sys/time.h>
 
 void CheckError(int ExitID, char* ErrMsg)
 {
@@ -22,9 +23,11 @@ void CheckError(int ExitID, char* ErrMsg)
 	}
 }
 
-clock_t GetTime()
+double GetTime()
 {
-	return clock();
+	timeval start;
+	gettimeofday(&start, NULL);
+	return (double) start.tv_sec + (double) start.tv_usec * 1e-6;
 }
 
 double DotProduct(int n, double* a, double* b)
@@ -59,14 +62,11 @@ cholmod_dense* CHOL_Vector_Col_Reorder;
 cholmod_dense* CHOL_TIMES_Row;
 cholmod_dense* CHOL_TIMES_Col;
 cholmod_factor* CHOL_Fac;
+cholmod_factor* CHOL_Fac_Backup;
 
 int CHOLMOD_Construct()
 {
-printf("SuiteSparse_long: %d\n", sizeof(SuiteSparse_long));
-printf("long: %d\n", sizeof(long));
 	cholmod_l_start(&CHOL_Com); // Start CHOLMOD
-	// Initially open all options
-	CHOL_Com.nmethods = 9;
 	CHOLMOD_Setting(&CHOL_Com); // In Setting_CPU.cpp / Setting_CPU.cpp
 
 	cholmod_triplet* Triplet = cholmod_l_allocate_triplet(n_Row, n_Col, n_Element, 0, CHOLMOD_REAL, &CHOL_Com); // stype == 0, asymmetric
@@ -97,6 +97,7 @@ printf("long: %d\n", sizeof(long));
 	CHOL_TIMES_Row = cholmod_l_allocate_dense(n_Row, 1, n_Row, CHOLMOD_REAL, &CHOL_Com);
 	CHOL_TIMES_Col = cholmod_l_allocate_dense(n_Col, 1, n_Col, CHOLMOD_REAL, &CHOL_Com);
 	CHOL_Fac = NULL;
+	CHOL_Fac_Backup = NULL;
 	return 0;
 }
 
@@ -113,6 +114,11 @@ int CHOLMOD_Destruct()
 	{
 		cholmod_l_free_factor(&CHOL_Fac, &CHOL_Com);
 		CHOL_Fac = NULL;
+	}
+	if (CHOL_Fac_Backup)
+	{
+		cholmod_l_free_factor(&CHOL_Fac_Backup, &CHOL_Com);
+		CHOL_Fac_Backup = NULL;
 	}
 	cholmod_l_finish(&CHOL_Com); // Finish CHOLMOD
 	return 0;
@@ -164,39 +170,46 @@ printf("In RenewCholesky\n");
 	cholmod_l_scale(CHOL_Vector_Col, CHOLMOD_COL, DsqrtinvA, &CHOL_Com);
 
 #ifdef PRINT_TIME
-	clock_t Tm;
+	double Tm;
 	Tm = GetTime();
 #endif
+	if (! CHOL_Fac_Backup)
+	{
 #ifdef DEBUG_TRACK
 printf("RenewCholesky: Before Analyze\n");
 #endif
-    CHOL_Fac = cholmod_l_analyze(DsqrtinvA, &CHOL_Com);
+		CHOL_Fac_Backup = cholmod_l_analyze(DsqrtinvA, &CHOL_Com);
 #ifdef DEBUG_TRACK
 printf("RenewCholesky: After Analyze\n");
 #endif
 #ifdef PRINT_TIME
-	printf("Analyze: %d ms\n", GetTime() - Tm);
+printf("Analyze: %.2lf s\n", GetTime() - Tm);
 #endif
-	if (CHOL_Com.nmethods == 9) // Choose a best method
-	{
-		CHOL_Com.nmethods = 1;
-		CHOL_Com.method[0] = CHOL_Com.method[CHOL_Com.selected];
-#ifdef DEBUG_TRACK
-printf("RenewCholesky: Best Method = %d\n", CHOL_Com.selected);
-#endif
+		if (CHOL_Com.nmethods == 9) // Choose a best method
+		{
+			CHOL_Com.nmethods = 1;
+			CHOL_Com.method[0] = CHOL_Com.method[CHOL_Com.selected];
+			printf("RenewCholesky: Best Method = %d\n", CHOL_Com.selected);
+		}
 	}
+	CHOL_Fac = cholmod_l_copy_factor(CHOL_Fac_Backup, &CHOL_Com);
+	
 #ifdef PRINT_TIME
 	Tm = GetTime();
 #endif
 #ifdef DEBUG_TRACK
 printf("RenewCholesky: Before Factorize\n");
 #endif
-	cholmod_l_factorize(DsqrtinvA, CHOL_Fac, &CHOL_Com);
+	
+	//cholmod_l_factorize(DsqrtinvA, CHOL_Fac, &CHOL_Com);
+	double Cholesky_Diagonal[2] = {Cholesky_Diagonal_Add, 0};
+	cholmod_l_factorize_p(DsqrtinvA, Cholesky_Diagonal, NULL, 0, CHOL_Fac, &CHOL_Com);
+	
 #ifdef DEBUG_TRACK
 printf("RenewCholesky: After Factorize\n");
 #endif
 #ifdef PRINT_TIME
-	printf("Factorize: %d ms\n", GetTime() - Tm);
+	printf("Factorize: %.2lf s\n", GetTime() - Tm);
 #endif
 	cholmod_l_free_sparse(&DsqrtinvA, &CHOL_Com);
 #ifdef DEBUG_TRACK
@@ -212,10 +225,6 @@ printf("Out RenewCholesky\n");
 // Need to call RenewCholesky(d) if ADA^T is not factorized yet!
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2)
 {
-#ifdef DEBUG_TRACK
-printf("In SolveLinearEquation\n");
-#endif
-
 	double SDMULT_POSITIVE[] = {1, 0};
 	double SDMULT_NEGATIVE[] = {-1, 0};
 	
@@ -245,7 +254,7 @@ printf("In SolveLinearEquation\n");
 
 	// Solve (A D^(-1) A^T) x_2 = (A D^(-1) b_1 - b_2)
 #ifdef PRINT_TIME
-	clock_t Tm = GetTime();
+	double Tm = GetTime();
 #endif
 	cholmod_dense* X2;
 	cholmod_dense* Tmp;
@@ -265,7 +274,7 @@ printf("SolveLinearEquation: After Solve\n");
 #endif
 
 #ifdef PRINT_TIME
-	printf("Solve: %d ms\n", GetTime() - Tm);
+	printf("Solve: %.2lf s\n", GetTime() - Tm);
 #endif
 	for (int i = 0; i < n_Row; i ++)
 		x_2[((long *) CHOL_Fac -> Perm) [i]] = ((double*) X2 -> x)[i];
@@ -284,9 +293,5 @@ printf("SolveLinearEquation: After Solve\n");
 	for (int i = 0; i < n_Col; i ++)
 		x_1[i] = ((double*) CHOL_Vector_Col -> x)[i] / d[i];
 	cholmod_l_free_dense(&X2, &CHOL_Com);
-	
-#ifdef DEBUG_TRACK
-printf("Out SolveLinearEquation\n");
-#endif
 	return 0;
 }

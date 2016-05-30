@@ -18,4 +18,8 @@ void CHOLMOD_Setting(cholmod_common* CHOL_Com)
 	//CHOL_Com -> supernodal = CHOLMOD_AUTO;
 	CHOL_Com -> supernodal = CHOLMOD_SUPERNODAL;
 	CHOL_Com -> useGPU = 0;
+
+	// Use AMD
+	CHOL_Com -> nmethods = 1;
+	CHOL_Com -> method[0] = CHOL_Com -> method[1];
 }

@@ -50,9 +50,6 @@ double HSD_rfval; // rfval = (1 + n_LB + n_UB) * min(x_j * z_j, xu_k * zu_k, tau
 // rfval = (1 + n_LB + n_UB) * min(x_j * z_j, xu_k * zu_k, tau * kappa) / sum(x_j * z_j, xu_k * zu_k, tau * kappa)
 void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p, double* r_d, double& r_g, double& mu, double& rfval)
 {
-#ifdef DEBUG_TRACK
-printf("In HSD_Calc_Newton_Parameters\n");
-#endif
 	double xz_min = HSD_tau * HSD_kappa; // min(x_j * z_j, xu_k * zu_k, tau * kappa)
 	double xz_sum = xz_min; // sum(x_j * z_j, xu_k * zu_k, tau * kappa)
 	for (int i = 0; i < n_LB; i ++)
@@ -136,14 +133,8 @@ printf("In HSD_Calc_Newton_Parameters\n");
 	HSD_primal_infeas = sqrt(HSD_rp_norm2_sq) / (HSD_tau + sqrt(DotProduct(n_Col, HSD_x, HSD_x)));
 	// Dual Infeasibility = ||r_d||_2 / (tau + sqrt(sum_LB(z_j^2) + sum_UB(zu_k^2 + yu_k^2) + sum(y_j^2)))
 	HSD_dual_infeas = sqrt(HSD_rd_norm2_sq) / (HSD_tau + sqrt(DotProduct(n_LB, HSD_z, HSD_z) + DotProduct(n_UB, HSD_zu, HSD_zu) + DotProduct(n_UB, HSD_yu, HSD_yu) + DotProduct(n_Row, HSD_y, HSD_y)));
-#ifdef DEBUG_TRACK
-printf("HSD_tau = %e, HSD_kappa = %e, HSD_inf0 = %e\n", HSD_tau, HSD_kappa, HSD_inf0);
-#endif
 	// Infe = (tau / kappa) / (tau0 / kappa0)
 	HSD_infe = HSD_tau / (HSD_kappa * HSD_inf0);
-#ifdef DEBUG_TRACK
-printf("Out HSD_Calc_Newton_Parameters\n");
-#endif
 }
 
 double HSD_SLE_RHS1[MAX_COLS], HSD_SLE_RHS2[MAX_ROWS];

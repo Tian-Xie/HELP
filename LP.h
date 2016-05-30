@@ -12,9 +12,9 @@
 
 #ifndef _LP_H
 
-//#define DEBUG_TRACK 
+#define DEBUG_TRACK 
 //#define PRINT_DEBUG
-//#define PRINT_TIME
+#define PRINT_TIME
 
 #define _LP_H
 #include <cstdio>
@@ -37,9 +37,9 @@ extern char Enabled_RANGES[];
 extern char Enabled_BOUNDS[];
 
 // Problem Related
-const int MAX_ROWS = 10000;
-const int MAX_COLS = 10000;
-const int MAX_ELEMENTS = 10000000;
+const int MAX_ROWS = 1000000;
+const int MAX_COLS = 1000000;
+const int MAX_ELEMENTS = 50000000;
 const int MAX_PROBLEM_NAME = 100;
 const double Input_Tolerance = 1e-8;
 const double Variable_Tolerance = 1e-12;
@@ -85,8 +85,9 @@ extern int RecoverOrder[MAX_COLS], TransOrder[MAX_COLS];
 int CRUSH_Main();
 
 // Helper.cpp
+const double Cholesky_Diagonal_Add = 1e-5;
 void CheckError(int ExitID, char* ErrMsg);
-clock_t GetTime();
+double GetTime();
 double DotProduct(int n, double* a, double* b);
 void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
 int CHOLMOD_Construct();

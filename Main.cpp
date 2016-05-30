@@ -20,29 +20,29 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{
 		// Input Filename
-		strcpy(Filename, "sparse2000");
+		strcpy(Filename, "sparse5000");
 	}
 	else
 		strcpy(Filename, argv[1]);
 	
-	clock_t Tm;
+	double Tm;
 	
 	Tm = GetTime();
 	CheckError(MPS_ReadFile(), "MPS ReadFile Failed!");
-	printf("MPS_ReadFile: %d ms\n", GetTime() - Tm);
+	printf("MPS_ReadFile: %.2lf s\n", GetTime() - Tm);
 	
 	Tm = GetTime();
 	CheckError(CRUSH_Main(), "Crushing Failed!");
-	printf("Crushing: %d ms\n", GetTime() - Tm);
+	printf("Crushing: %.2lf s\n", GetTime() - Tm);
 
 	Tm = GetTime();
 	CheckError(Presolve_Main(), "Presolving Failed!");
-	printf("Presolving: %d ms\n", GetTime() - Tm);
+	printf("Presolving: %.2lf s\n", GetTime() - Tm);
 
 	Tm = GetTime();
 	CheckError(HSD_Main(), "Homogeneous and Self-Dual Numerical Solving Failed!");
-	printf("Homogeneous and Self-Dual Numerical Solving: %d ms\n", GetTime() - Tm);
+	printf("Homogeneous and Self-Dual Numerical Solving: %.2lf s\n", GetTime() - Tm);
 
-	system("pause");
+//	system("pause");
 	return 0;
 }
