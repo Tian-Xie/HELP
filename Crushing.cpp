@@ -30,7 +30,7 @@ int CRUSH_Main()
 		if (V_LB[Col] >= -MaxFinite) // Lower Bound is Finite, use (x[i] - V_LB[i]) to instead (x[i])
 		{
 			V_Crushing_Add[Col] = V_LB[Col];
-			for (int i = V_Matrix_Head[Col]; i != -1; i = V_Matrix_Next[i]) // Adjust Each Row
+			for (int i = V_Matrix_Col_Head[Col]; i != -1; i = V_Matrix_Col_Next[i]) // Adjust Each Row
 			{
 				int Row = V_Matrix_Row[i];
 				double Shift = V_Matrix_Value[i] * V_LB[Col];
@@ -46,7 +46,7 @@ int CRUSH_Main()
 		{
 			V_Crushing_Times[Col] = -1;
 			V_Crushing_Add[Col] = V_LB[Col];
-			for (int i = V_Matrix_Head[Col]; i != -1; i = V_Matrix_Next[i]) // Adjust Each Row
+			for (int i = V_Matrix_Col_Head[Col]; i != -1; i = V_Matrix_Col_Next[i]) // Adjust Each Row
 			{
 				int Row = V_Matrix_Row[i];
 				V_Matrix_Value[i] = -V_Matrix_Value[i];
@@ -69,7 +69,7 @@ int CRUSH_Main()
 			continue;
 		// Create a slack variable and the corresponding column
 		int Col = n_Col;
-		V_Matrix_Head[Col] = -1;
+		V_Matrix_Col_Head[Col] = -1;
 		V_Cost[Col] = 0.0;
 		V_LB[Col] = 0.0;
 		V_UB[Col] = MaxPositive;
@@ -87,8 +87,8 @@ int CRUSH_Main()
 			V_UB[Col] = V_RHS[Row] - V_RHS_r[Row];
 			V_RHS[Row] = V_RHS_r[Row];
 		}
-		V_Matrix_Next[n_Element] = V_Matrix_Head[Col];
-		V_Matrix_Head[Col] = n_Element;
+		V_Matrix_Col_Next[n_Element] = V_Matrix_Col_Head[Col];
+		V_Matrix_Col_Head[Col] = n_Element;
 		n_Element ++;
 	}
 	printf("    After Crushing, %d Rows, %d Columns, %d Elements.\n", n_Row, n_Col, n_Element);

@@ -14,5 +14,6 @@
 
 int Prog_Init()
 {
+	LP_Status = LP_STATUS_OK; 
 	return 0;
 }

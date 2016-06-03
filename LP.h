@@ -39,7 +39,7 @@ extern char Enabled_BOUNDS[];
 // Problem Related
 const int MAX_ROWS = 1000000;
 const int MAX_COLS = 1000000;
-const int MAX_ELEMENTS = 50000000;
+const int MAX_ELEMENTS = 40000000;
 const int MAX_PROBLEM_NAME = 100;
 const double Input_Tolerance = 1e-8;
 const double Variable_Tolerance = 1e-12;
@@ -47,6 +47,14 @@ const double MaxPositive = 1e+30;
 const double MaxFinite = 0.99995 * MaxPositive;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
+const int PRESOLVE_LEVEL = 0;
+
+// Problem Status
+const int LP_STATUS_OK = 0;
+const int LP_STATUS_PRIMAL_INFEASIBLE = 1;
+const int LP_STATUS_PRIMAL_UNBOUNDED = 2;
+const int LP_STATUS_OVERFLOW = 3;
+extern int LP_Status; 
 
 // Homogeneous Algorithm Parameter
 const double STEPSIZE_GAMMA = 0.99995;
@@ -66,7 +74,9 @@ extern double V_RHS[MAX_ROWS]; // b, RHS
 extern double V_RHS_r[MAX_ROWS]; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_RHS[i]]
 extern double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
 // A, Column Majored Matrix, Linked List
-extern long V_Matrix_Head[MAX_COLS], V_Matrix_Next[MAX_ELEMENTS], V_Matrix_Row[MAX_ELEMENTS];
+extern int V_Matrix_Col_Head[MAX_COLS], V_Matrix_Col_Next[MAX_ELEMENTS], V_Matrix_Col_Prev[MAX_ELEMENTS];
+extern int V_Matrix_Row_Head[MAX_COLS], V_Matrix_Row_Next[MAX_ELEMENTS], V_Matrix_Row_Prev[MAX_ELEMENTS];
+extern int V_Matrix_Row[MAX_ELEMENTS], V_Matrix_Col[MAX_ELEMENTS];
 extern double V_Matrix_Value[MAX_ELEMENTS];
 
 // Crushing
@@ -75,6 +85,15 @@ extern int V_Crushing_Times[MAX_COLS];
 extern double V_Crushing_Add[MAX_COLS]; // Output (x[i] * V_Crushing_Times[i] + V_Crushing_Add[i])
 
 // Presolve
+extern int V_Presolve_Linear_Replace[MAX_COLS];
+// { x_k = x'_k - v x_j
+// { l_j <= x_j <= u_j
+// { l_k <= x'_k - v x_j <= u_k
+// Recover from newest to oldest!
+extern int V_Presolve_Duplicate_Column_Cnt;
+extern double V_Presolve_Duplicate_Column_v[MAX_COLS];
+extern int V_Presolve_Duplicate_Column_k[MAX_COLS], V_Presolve_Duplicate_Column_j[MAX_COLS];
+// Final Model
 extern int n_LB, n_UB, n_FR; 
 // Rearranged as: (a) x[0 ~ (n_UB - 1)]: With LB and UB; 
 //                (b) x[n_UB ~ (n_LB - 1)]: With LB only; 
@@ -90,10 +109,11 @@ void CheckError(int ExitID, char* ErrMsg);
 double GetTime();
 double DotProduct(int n, double* a, double* b);
 void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
-int CHOLMOD_Construct();
-int CHOLMOD_Destruct();
-void SetATimesVector(int Transpose, double alpha, double beta, double* v, double* dest);
-void RenewCholesky(double* d);
+void SetATimesVector(int Transpose, int Sign, double* v, double* dest);
+
+int LinearEquation_Construct();
+int LinearEquation_Destruct();
+void RenewLinearEquation(double* d);
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2);
 
 // HSDSolver.cpp

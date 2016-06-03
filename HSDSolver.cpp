@@ -92,7 +92,7 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 	
 	// r_p = tau * b - A * x
 	SetScaledVector(n_Row, HSD_tau, V_RHS, r_p);
-	SetATimesVector(false, -1, 1, HSD_x, r_p);
+	SetATimesVector(false, -1, HSD_x, r_p);
 
 	// r_d = - c * tau + A^T * y + z; note that r_d is actually -r_d in Section 4!
 	for (int i = 0; i < n_LB; i ++)
@@ -101,7 +101,7 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 		r_d[n_LB + i] = -V_Cost[n_LB + i] * HSD_tau;
 	for (int i = n_LB + n_FR; i < n_Col; i ++) // Anything Fixed ???
 		r_d[i] = 0;
-	SetATimesVector(true, 1, 1, HSD_y, r_d);
+	SetATimesVector(true, 1, HSD_y, r_d);
 
 	// r_g = kappa + c^T * x - b^T * y
 	double cTx = DotProduct(n_LB + n_FR, V_Cost, HSD_x);
@@ -288,7 +288,7 @@ printf("In HSD_Search_Direction\n");
 	for (int i = 0; i < n_LB; i ++)
 		if (HSD_x[i] < HSD_z[i])
 		{
-			for (int j = V_Matrix_Head[i]; j != -1; j = V_Matrix_Next[j])
+			for (int j = V_Matrix_Col_Head[i]; j != -1; j = V_Matrix_Col_Next[j])
 				HSD_Dir_RHS2[V_Matrix_Row[j]] -= V_Matrix_Value[j] * hat_r_xz[i];
 		}
 	for (int i = 0; i < n_UB; i ++)
@@ -382,13 +382,13 @@ printf("In HSD_Search_Direction\n");
 	double rhoDtau = HSD_rho / HSD_tau;
 	for (int i = 0; i < n_FR; i ++)
 		HSD_Dir_RHS1[i + n_LB] += -(V_Cost[i] - rhoDtau * HSD_xf[i] * HSD_x[i + n_LB]) * dtau - HSD_rho * HSD_xf[i] * dx[i + n_LB];
-	SetATimesVector(true, 1, 1, dy, HSD_Dir_RHS1);
+	SetATimesVector(true, 1, dy, HSD_Dir_RHS1);
 
 	// RHS2 = eta * r_p + b * dtau - A * dx
 	//      = eta * (b * tau - A * x) + b * dtau - A * dx
 	for (int i = 0; i < n_Row; i ++)
 		HSD_Dir_RHS2[i] = eta * HSD_r_p[i] + V_RHS[i] * dtau;
-	SetATimesVector(false, -1, 1, dx, HSD_Dir_RHS2);
+	SetATimesVector(false, -1, dx, HSD_Dir_RHS2);
 
 	// RHS1_u = eta * (zu + yu) + dyu + dzu;
 	// RHS2_u = eta * (tau * u[j] - x[j] - xu[j]) + u[j] * dtau - dxu[j] - dx[j];
@@ -571,7 +571,7 @@ void HSD_GetInitPoint()
 	if (HSD_status != HSD_STATUS_OK)
 		return;
 	// Remember to factorize ADA^T!
-	RenewCholesky(HSD_D);
+	RenewLinearEquation(HSD_D);
 	
 	double DOT;
 	HSD_LinearEquation_Bottom(HSD_D, HSD_D_u, DOT, HSD_Dir_p, HSD_Dir_p_u, HSD_Dir_q, HSD_Dir_q_u);
@@ -694,7 +694,7 @@ printf("Into Iteration: Iter = %d\n", Iter);
 			break;
 
 		// Factorize ADA^T
-		RenewCholesky(HSD_D);
+		RenewLinearEquation(HSD_D);
 		double DOT;
 		HSD_LinearEquation_Bottom(HSD_D, HSD_D_u, DOT, HSD_Dir_p, HSD_Dir_p_u, HSD_Dir_q, HSD_Dir_q_u);
 		double r_p_norm, r_d_norm, r_g_norm;
@@ -796,10 +796,10 @@ printf("Into Iteration: Iter = %d\n", Iter);
 
 int HSD_Main()
 {
-	CHOLMOD_Construct();
+	LinearEquation_Construct();
 	
 	HSD_Solving();
 
-	CHOLMOD_Destruct();
+	LinearEquation_Destruct();
 	return 0;
 }

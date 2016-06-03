@@ -129,7 +129,7 @@ void MPS_COLUMNS()
 			Hash_Col.Insert(ColHash, n_Col);
 			ColID = n_Col;
 			V_Cost[n_Col] = 0.0;
-			V_Matrix_Head[n_Col] = -1;
+			V_Matrix_Col_Head[n_Col] = -1;
 			n_Col ++;
 		}
 
@@ -157,8 +157,8 @@ void MPS_COLUMNS()
 			// Cannot check duplicate element
 			V_Matrix_Row[n_Element] = RowID;
 			V_Matrix_Value[n_Element] = RCValue;
-			V_Matrix_Next[n_Element] = V_Matrix_Head[ColID];
-			V_Matrix_Head[ColID] = n_Element;
+			V_Matrix_Col_Next[n_Element] = V_Matrix_Col_Head[ColID];
+			V_Matrix_Col_Head[ColID] = n_Element;
 			n_Element ++;
 		}
 	}

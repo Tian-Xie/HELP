@@ -27,12 +27,12 @@ int THashTable::Init(int _LENGTH, int _HashMod)
 {
 	Release();
 	this -> Key = new unsigned long long[_LENGTH];
-	this -> Row = new long[_LENGTH];
-	this -> Next = new long[_LENGTH];
-	this -> Head = new long[_HashMod];
+	this -> Row = new int[_LENGTH];
+	this -> Next = new int[_LENGTH];
+	this -> Head = new int[_HashMod];
 	this -> HashMod = _HashMod;
 	this -> SIZE = 0;
-	memset(this -> Head, -1, sizeof(long) * _HashMod);
+	memset(this -> Head, -1, sizeof(int) * _HashMod);
 	return 0;
 }
 
@@ -54,7 +54,7 @@ int THashTable::Release()
 	return 0;
 }
 
-long THashTable::Find(unsigned long long x)// -2 = Not Found, -1 = Objective
+int THashTable::Find(unsigned long long x)// -2 = Not Found, -1 = Objective
 {
 	for (int i = this -> Head[x % this -> HashMod]; i != -1; i = this -> Next[i])
 		if (this -> Key[i] == x)
@@ -62,9 +62,9 @@ long THashTable::Find(unsigned long long x)// -2 = Not Found, -1 = Objective
 	return HASH_NOT_FOUND;
 }
 
-int THashTable::Insert(unsigned long long x, long _Row)
+int THashTable::Insert(unsigned long long x, int _Row)
 {
-	long HashKey = x % this -> HashMod;
+	int HashKey = x % this -> HashMod;
 	for (int i = this -> Head[HashKey]; i != -1; i = this -> Next[i])
 		if (this -> Key[i] == x)
 			return HASH_INSERT_FOUND; // Found
