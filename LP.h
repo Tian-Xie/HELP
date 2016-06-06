@@ -17,6 +17,9 @@
 #define PRINT_TIME
 
 #define _LP_H
+
+#pragma once
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -37,9 +40,17 @@ extern char Enabled_RANGES[];
 extern char Enabled_BOUNDS[];
 
 // Problem Related
+#ifdef _MSC_VER
+// Local PC
+const int MAX_ROWS = 10000;
+const int MAX_COLS = 10000;
+const int MAX_ELEMENTS = 1000000;
+#else
+// Server
 const int MAX_ROWS = 1000000;
 const int MAX_COLS = 1000000;
-const int MAX_ELEMENTS = 40000000;
+const int MAX_ELEMENTS = 20000000;
+#endif
 const int MAX_PROBLEM_NAME = 100;
 const double Input_Tolerance = 1e-8;
 const double Variable_Tolerance = 1e-12;

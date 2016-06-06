@@ -84,6 +84,9 @@ void RenewLinearEquation(double* d)
 #ifdef DEBUG_TRACK
 printf("In RenewCholesky\n");
 #endif
+#ifdef PRINT_DEBUG
+printf("arrd = zeros(%d, 1);\n", n_Col); for (int i = 0; i < n_Col; i ++) printf("arrd(%d) = %.10lf;\n", i + 1, 1.0 / d[i]); printf("D = diag(arrd);\n");
+#endif
 	if (CHOL_Fac)
 	{
 		cholmod_l_free_factor(&CHOL_Fac, &CHOL_Com);
@@ -155,12 +158,14 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	double SDMULT_NEGATIVE[] = {-1, 0};
 	
 #ifdef PRINT_DEBUG
+/* 
 	printf("b_1 = zeros(%d, 1);\n", n_Col);
 	for (int i = 0; i < n_Col; i ++)
 		printf("b_1(%d) = %.6lf;\n", i + 1, b_1[i]);
 	printf("b_2 = zeros(%d, 1);\n", n_Row);
 	for (int i = 0; i < n_Row; i ++)
 		printf("b_2(%d) = %.6lf;\n", i + 1, b_2[i]);
+*/
 #endif
 
 	for (int i = 0; i < n_Row; i ++)
@@ -177,6 +182,10 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 		printf("%d\n", ((int *) CHOL_Fac -> Perm) [i]);
 #endif
 	}
+#ifdef PRINT_DEBUG
+printf("RHS = zeros(%d, 1);\n", n_Row); for (int i = 0; i < n_Row; i ++) printf("RHS(%d) = %.10lf;\n", i + 1, ((double*) CHOL_Vector_Row -> x)[i]);
+printf("inv(A * D * A') * RHS\n");
+#endif
 
 	// Solve (A D^(-1) A^T) x_2 = (A D^(-1) b_1 - b_2)
 #ifdef PRINT_TIME
@@ -218,6 +227,10 @@ printf("SolveLinearEquation: After Solve\n");
 	// Let x_1 = D^(-1) (b_1 - A^T x_2)
 	for (int i = 0; i < n_Col; i ++)
 		x_1[i] = ((double*) CHOL_Vector_Col -> x)[i] / d[i];
+#ifdef PRINT_DEBUG
+	for (int i = 0; i < n_Col; i ++)
+		printf("x_1(%d) = %lf\n", i + 1, x_1[i]);
+#endif
 	cholmod_l_free_dense(&X2, &CHOL_Com);
 	return 0;
 }

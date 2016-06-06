@@ -20,7 +20,8 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{
 		// Input Filename
-		strcpy(Filename, "sparse5000");
+		strcpy(Filename, "afiro.mps");
+		//strcpy(Filename, "example.mps");
 	}
 	else
 		strcpy(Filename, argv[1]);
@@ -43,6 +44,6 @@ int main(int argc, char* argv[])
 	CheckError(HSD_Main(), "Homogeneous and Self-Dual Numerical Solving Failed!");
 	printf("Homogeneous and Self-Dual Numerical Solving: %.2lf s\n", GetTime() - Tm);
 
-//	system("pause");
+	system("pause");
 	return 0;
 }

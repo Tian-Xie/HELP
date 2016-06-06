@@ -14,6 +14,8 @@
 
 #define _HASH_H
 
+#pragma once
+
 #include "LP.h"
 
 const int HASH_OBJECTIVE = -1;

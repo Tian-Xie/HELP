@@ -69,7 +69,7 @@ void SetATimesVector(int Transpose, int Sign, double* v, double* dest)
 		for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
 		{
 			int Row = V_Matrix_Row[j];
-			int Value = V_Matrix_Value[j];
+			double Value = V_Matrix_Value[j];
 			if (! Transpose) // A * v
 			{
 				if (Sign == 1)

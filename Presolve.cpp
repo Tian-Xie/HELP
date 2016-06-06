@@ -37,7 +37,7 @@ int Presolve_Sort_Tmp[MAX_ROWS + MAX_COLS];
 
 void Presolve_Row_Sort(int i)
 {
-	if (Row_Disable[i] || Row_Element_Count[i] != 0)
+	if (Row_Disable[i] || Row_Element_Count[i] == 0)
 		return;
 	int Cnt = 0;
 	for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
@@ -54,7 +54,7 @@ void Presolve_Row_Sort(int i)
 
 void Presolve_Col_Sort(int j)
 {
-	if (Col_Disable[j] || Col_Element_Count[j] != 0)
+	if (Col_Disable[j] || Col_Element_Count[j] == 0)
 		return;
 	int Cnt = 0;
 	for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
@@ -100,6 +100,7 @@ void Presolve_Init()
 			Col_1Norm[j] += fabs(V_Matrix_Value[p]);
 		}
 	// Need some sorting, and build reverse links
+
 	for (int i = 0; i < n_Row; i ++)
 		Presolve_Row_Sort(i);
 	for (int j = 0; j < n_Col; j ++)
