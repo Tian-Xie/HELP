@@ -3,11 +3,9 @@
 *  Algorithm for Linear Programming.                                         *
 *  Author: Tian Xie (Research Center for Management Science and Information  *
 *          Analytics, Shanghai University of Finance and Economics)          *
-*  Credits: (1) Fundamental implementation idea originated from COPL_LP.     *
-*               (Xiong Zhang and Yinyu Ye)                                   *
-*               See http://web.stanford.edu/~yyye/Col.html .                 *
-*           (2) Sparse Cholesky Decomposition is supported by CHOLMOD.       *
-*               (Timothy A. Davis)                                           *
+*  Credits: Fundamental implementation idea originated from COPL_LP.         *
+*           (Xiong Zhang and Yinyu Ye)                                       *
+*           See http://web.stanford.edu/~yyye/Col.html .                     *
 ******************************************************************************/
 
 #ifndef _LP_H
@@ -44,7 +42,7 @@ extern char Enabled_BOUNDS[];
 // Local PC
 const int MAX_ROWS = 10000;
 const int MAX_COLS = 10000;
-const int MAX_ELEMENTS = 1000000;
+const int MAX_ELEMENTS = 10000000;
 #else
 // Server
 const int MAX_ROWS = 1000000;
