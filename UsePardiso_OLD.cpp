@@ -18,6 +18,10 @@ const char CHAR_T = 'T';
 const char CHAR_N = 'N';
 const double DOUBLE_ONE = 1.0;
 const double DOUBLE_NEGONE = -1.0;
+const int INT_ZERO = 0;
+const int INT_ONE = 1;
+const int INT_TWO = 2;
+const int INT_SEVEN = 7;
 
 void* PARDISO_pt[64];
 int PARDISO_iparm[64];
@@ -25,9 +29,12 @@ int PARDISO_maxfct, PARDISO_mnum, PARDISO_mtype, PARDISO_phase, PARDISO_n, PARDI
 int INT_dummy;
 double DOUBLE_dummy;
 
+int nnzA; 
+double *csrValAt; int csrRowPtrAt[MAX_COLS + 1]; int *csrColIndAt;
+double *csrValDAt;
 int Perm[MAX_ROWS];
-int nnzA; double *csrValAt; int csrRowPtrAt[MAX_COLS + 1]; int *csrColIndAt;
-int nnzTriADAt; double *csrValTriADAt; int csrRowPtrTriADAt[MAX_ROWS + 1]; int *csrColIndTriADAt;
+int max_nnzADAt, nnzADAt; double *csrValADAt; int csrRowPtrADAt[MAX_ROWS + 1]; int *csrColIndADAt;
+int max_nnzTriADAt, nnzTriADAt; double *csrValTriADAt; int csrRowPtrTriADAt[MAX_ROWS + 1]; int *csrColIndTriADAt;
 
 double tmp_row[MAX_ROWS], tmp_col[MAX_COLS];
 double X1[MAX_COLS], X2[MAX_ROWS];
@@ -47,6 +54,9 @@ int LinearEquation_Construct()
 			printf("A(%d, %d) = %lf;\n", i + 1, V_Matrix_Col[p] + 1, V_Matrix_Value[p]);
 #endif
 
+#ifdef PRINT_TIME
+	double Tm = GetTime();
+#endif
 	// Count A size
 	nnzA = 0;
 	for (int i = 0; i < n_Row; i ++)
@@ -54,36 +64,70 @@ int LinearEquation_Construct()
 			nnzA ++;
 	csrValAt = (double*) malloc(sizeof(double) * nnzA);
 	csrColIndAt = (int*) malloc(sizeof(double) * nnzA);
-	
+	csrValDAt = (double*) malloc(sizeof(double) * nnzA);
+
 	// Construct matrix At in CSR format. 
 	// After Presolve_Init(), we can assume A is sorted.
 	nnzA = 0;
 	for (int j = 0; j < n_Col; j ++)
 	{
-		csrRowPtrAt[j] = nnzA;
+		csrRowPtrAt[j] = nnzA + 1; // One-based
 		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 		{
 			csrValAt[nnzA] = V_Matrix_Value[p];
-			csrColIndAt[nnzA] = V_Matrix_Row[p];
+			csrColIndAt[nnzA] = V_Matrix_Row[p] + 1; // One-based
 			nnzA ++;
 		}
 	}
-	csrRowPtrAt[n_Col] = nnzA;
+	csrRowPtrAt[n_Col] = nnzA + 1;
 
-#ifdef PRINT_TIME
-	double Tm = GetTime();
-#endif
 	// Symbolic Analysis: METIS, Nested Dissection Algorithm
 	// Make a symbolic matrix
 #ifdef DEBUG_TRACK
-	printf("Before ADAt Allocation\n");
+	printf("Before Test Multiplication\n");
 #endif
-	ADAt_Allocate(&nnzTriADAt, &csrValTriADAt, csrRowPtrTriADAt, &csrColIndTriADAt);
+	for (int i = 0; i < nnzA; i ++)
+		csrValDAt[i] = 1.0;
+	int MKL_Error;
+	mkl_dcsrmultcsr(&CHAR_T, &INT_ONE, &INT_SEVEN, &n_Col, &n_Row, &n_Row, csrValDAt, csrColIndAt, csrRowPtrAt, 
+		csrValDAt, csrColIndAt, csrRowPtrAt, &DOUBLE_dummy, &INT_dummy, csrRowPtrADAt, &INT_dummy, &MKL_Error);
+	max_nnzADAt = csrRowPtrADAt[n_Row] - 1;
+	csrValADAt = (double*) malloc(sizeof(double) * max_nnzADAt);
+	csrColIndADAt = (int*) malloc(sizeof(int) * max_nnzADAt);
+	mkl_dcsrmultcsr(&CHAR_T, &INT_TWO, &INT_SEVEN, &n_Col, &n_Row, &n_Row, csrValDAt, csrColIndAt, csrRowPtrAt, 
+		csrValDAt, csrColIndAt, csrRowPtrAt, csrValADAt, csrColIndADAt, csrRowPtrADAt, &max_nnzADAt, &MKL_Error);
+	// Extract Upper Triangle of ADAt
+	max_nnzTriADAt = 0;  // Only Upper Triangle
+	for (int i = 0; i < n_Row; i ++)
+		for (int p = csrRowPtrADAt[i] - 1; p < csrRowPtrADAt[i + 1] - 1; p ++)
+		{
+			int j = csrColIndADAt[p] - 1;
+			if (i <= j)
+				max_nnzTriADAt ++;
+		}
+	csrValTriADAt = (double*) malloc(sizeof(double) * max_nnzTriADAt);
+	csrColIndTriADAt = (int*) malloc(sizeof(int) * max_nnzTriADAt);
+	nnzTriADAt = 0;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		csrRowPtrTriADAt[i] = nnzTriADAt + 1;
+		for (int p = csrRowPtrADAt[i] - 1; p < csrRowPtrADAt[i + 1] - 1; p ++)
+		{
+			int j = csrColIndADAt[p] - 1;
+			if (i <= j)
+			{
+				csrValTriADAt[nnzTriADAt] = csrValADAt[p];
+				csrColIndTriADAt[nnzTriADAt] = j + 1;
+				nnzTriADAt ++;
+			}
+		}
+	}
+	csrRowPtrTriADAt[n_Row] = nnzTriADAt + 1;
 #ifdef DEBUG_TRACK
-	printf("After ADAt Allocation\n");
+	printf("After Test Multiplication\n");
 #endif
 #ifdef PRINT_TIME
-	printf("Symbolic Multiplication: %.2lf s\n", GetTime() - Tm);
+	printf("Test Multiplication: %.2lf s\n", GetTime() - Tm);
 #endif
 
 	// Initialize PARDISO parameters
@@ -107,14 +151,14 @@ int LinearEquation_Construct()
 	PARDISO_iparm[27] = 0; // Double precision
 	PARDISO_iparm[30] = 0; // No partial solve / computing
 	PARDISO_iparm[33] = 0; // CNR mode: Default
-	PARDISO_iparm[34] = 1; // ZERO-based indexing
+	PARDISO_iparm[34] = 0; // ONE-based indexing
 	PARDISO_iparm[35] = 0; // Do not compute Schur complement
 	PARDISO_iparm[36] = 0; // CSR format
 	PARDISO_iparm[55] = 0; // Diagonal and pivoting control: Default
 	PARDISO_iparm[59] = 0; // PARDISO mode: IC (in-core)
 	PARDISO_maxfct = 1;
 	PARDISO_mnum = 1;
-	PARDISO_mtype = -2;
+	PARDISO_mtype = 2;
 	PARDISO_phase = 11;
 	PARDISO_n = n_Row;
 	PARDISO_nrhs = 1;
@@ -144,6 +188,9 @@ int LinearEquation_Destruct()
 {
 	if (csrValAt) { free(csrValAt); csrValAt = 0; }
 	if (csrColIndAt) { free(csrColIndAt); csrColIndAt = 0; }
+	if (csrValDAt) { free(csrValDAt); csrValDAt = 0; }
+	if (csrValADAt) { free(csrValADAt); csrValADAt = 0; }
+	if (csrColIndADAt) { free(csrColIndADAt); csrColIndADAt = 0; }
 	if (csrValTriADAt) { free(csrValTriADAt); csrValTriADAt = 0; }
 	if (csrColIndTriADAt) { free(csrColIndTriADAt); csrColIndTriADAt = 0; }
 	PARDISO_phase = -1;
@@ -152,18 +199,54 @@ int LinearEquation_Destruct()
 	return 0;
 }
 
-double dinv[MAX_COLS];
 // Renew ADA^T and factorize
 void RenewLinearEquation(double* d) // d should be inversed
 {
 #ifdef PRINT_TIME
 	double Tm = GetTime();
 #endif
+	// Calc DAt
 	for (int j = 0; j < n_Col; j ++)
-		dinv[j] = 1.0 / d[j];
-	ADAt_Calc(dinv, csrValTriADAt, csrRowPtrTriADAt, csrColIndTriADAt);
+	{
+		double dinv_j = 1.0 / d[j];
+		for (int p = csrRowPtrAt[j] - 1; p < csrRowPtrAt[j + 1] - 1; p ++)
+			csrValDAt[p] = csrValAt[p] * dinv_j;
+	}
+	// Calc ADAt
+	int MKL_Error;
+	mkl_dcsrmultcsr(&CHAR_T, &INT_TWO, &INT_SEVEN, &n_Col, &n_Row, &n_Row, csrValAt, csrColIndAt, csrRowPtrAt, 
+		csrValDAt, csrColIndAt, csrRowPtrAt, csrValADAt, csrColIndADAt, csrRowPtrADAt, &max_nnzADAt, &MKL_Error);
 #ifdef PRINT_TIME
 	printf("%%Calc ADAt: %.2lf s\n", GetTime() - Tm);
+#endif
+#ifdef PRINT_TIME
+	Tm = GetTime();
+#endif
+	// Extract Upper Triangle of ADAt
+	nnzTriADAt = 0;
+#ifdef PRINT_DEBUG
+	printf("ADAt = zeros(%d, %d);\n", n_Row, n_Row);
+#endif
+	for (int i = 0; i < n_Row; i ++)
+	{
+		csrRowPtrTriADAt[i] = nnzTriADAt + 1;
+		for (int p = csrRowPtrADAt[i] - 1; p < csrRowPtrADAt[i + 1] - 1; p ++)
+		{
+			int j = csrColIndADAt[p] - 1;
+			if (i <= j)
+			{
+				csrValTriADAt[nnzTriADAt] = csrValADAt[p];
+				csrColIndTriADAt[nnzTriADAt] = j + 1;
+				nnzTriADAt ++;
+			}
+#ifdef PRINT_DEBUG
+			printf("ADAt(%d, %d) = %lf;\n", i + 1, j + 1, csrValADAt[p]);
+#endif
+		}
+	}
+	csrRowPtrTriADAt[n_Row] = nnzTriADAt + 1;
+#ifdef PRINT_TIME
+	printf("%%Extract Upper Triangle of ADAt: %.2lf s\n", GetTime() - Tm);
 #endif
 #ifdef PRINT_TIME
 	Tm = GetTime();
@@ -227,7 +310,7 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	// A * (D^(-1) b_1) - b_2
 	char MKL_matdescra[6];
 	MKL_matdescra[0] = 'G';
-	MKL_matdescra[3] = 'C';
+	MKL_matdescra[3] = 'F';
 	mkl_dcsrmv(&CHAR_T, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValAt, csrColIndAt, csrRowPtrAt, csrRowPtrAt + 1, tmp_col, &DOUBLE_ONE, tmp_row);
 
 	// Solve (A D^(-1) A^T) x_2 = (A D^(-1) b_1 - b_2)

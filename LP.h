@@ -10,6 +10,7 @@
 
 #ifndef _LP_H
 
+#define OMP_THREADS_MAX 32
 #define DEBUG_TRACK 
 //#define PRINT_DEBUG
 #define PRINT_TIME
@@ -119,6 +120,8 @@ double GetTime();
 double DotProduct(int n, double* a, double* b);
 void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
 void SetATimesVector(int Transpose, int Sign, double* v, double* dest);
+void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol);
+void ADAt_Calc(double* d, double* csrVal, int* csrRow, int* csrCol);
 
 int LinearEquation_Construct();
 int LinearEquation_Destruct();

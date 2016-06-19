@@ -43,6 +43,8 @@ int main(int argc, char* argv[])
 	CheckError(HSD_Main(), "Homogeneous and Self-Dual Numerical Solving Failed!");
 	printf("Homogeneous and Self-Dual Numerical Solving: %.2lf s\n", GetTime() - Tm);
 
+#ifdef _MSC_VER
 	system("pause");
+#endif
 	return 0;
 }

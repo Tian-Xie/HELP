@@ -14,6 +14,7 @@
 #else
 #include <sys/time.h>
 #endif
+#include "omp.h"
 
 void CheckError(int ExitID, char* ErrMsg)
 {
@@ -21,6 +22,9 @@ void CheckError(int ExitID, char* ErrMsg)
 	{
 		printf("ERROR: Msg = %s, ErrorCode = %d\n", ErrMsg, ExitID);
 		LinearEquation_Destruct();
+#ifdef _MSC_VER
+		system("pause");
+#endif
 		exit(ExitID);
 	}
 }
@@ -84,4 +88,91 @@ void SetATimesVector(int Transpose, int Sign, double* v, double* dest)
 					dest[Col] -= Value * v[Row];
 			}
 		}
+}
+
+int SPMM_FLAG[MAX_COLS][OMP_THREADS_MAX];
+double SPMM_Value[MAX_COLS][OMP_THREADS_MAX];
+int nnzRow[MAX_ROWS];
+
+// Make sure that csrRow has been allocated as int[n_Row + 1]!
+void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol)
+{
+	memset(SPMM_FLAG, -1, sizeof(int) * n_Col * OMP_THREADS_MAX);
+	#pragma omp parallel for
+	for (int i = 0; i < n_Row; i ++)
+	{
+		int threadId = omp_get_thread_num();
+		nnzRow[i] = 0;
+		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+		{
+			int j = V_Matrix_Col[p];
+			for (int q = p; q != -1; q = V_Matrix_Col_Next[q])
+			{
+				int k = V_Matrix_Row[q];
+				if (SPMM_FLAG[k][threadId] != i)
+				{
+					SPMM_FLAG[k][threadId] = i;
+					nnzRow[i] ++;
+				}
+			}
+		}
+	}
+	csrRow[0] = 0;
+	for (int i = 0; i < n_Row; i ++)
+		csrRow[i + 1] = csrRow[i] + nnzRow[i];
+
+	*nnzADAt = csrRow[n_Row];
+	double* csrVal = (double*) malloc(sizeof(double) * csrRow[n_Row]);
+	*p_csrVal = csrVal;
+	int* csrCol = (int*) malloc(sizeof(int) * csrRow[n_Row]);
+	*p_csrCol = csrCol;
+	
+	memset(SPMM_FLAG, -1, sizeof(int) * n_Col * OMP_THREADS_MAX);
+	#pragma omp parallel for
+	for (int i = 0; i < n_Row; i ++)
+	{
+		int threadId = omp_get_thread_num();
+		int nnz_i = csrRow[i];
+		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+		{
+			int j = V_Matrix_Col[p];
+			for (int q = p; q != -1; q = V_Matrix_Col_Next[q])
+			{
+				int k = V_Matrix_Row[q];
+				if (SPMM_FLAG[k][threadId] != i)
+				{
+					SPMM_FLAG[k][threadId] = i;
+					csrVal[nnz_i] = 1; // Symbolic
+					csrCol[nnz_i] = k;
+					nnz_i ++;
+				}
+			}
+		}
+	}
+}
+
+void ADAt_Calc(double* d, double* csrVal, int* csrRow, int* csrCol)
+{
+	memset(SPMM_FLAG, -1, sizeof(int) * n_Col * OMP_THREADS_MAX);
+	#pragma omp parallel for
+	for (int i = 0; i < n_Row; i ++)
+	{
+		int threadId = omp_get_thread_num();
+		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+		{
+			int j = V_Matrix_Col[p];
+			for (int q = p; q != -1; q = V_Matrix_Col_Next[q])
+			{
+				int k = V_Matrix_Row[q];
+				if (SPMM_FLAG[k][threadId] != i)
+				{
+					SPMM_FLAG[k][threadId] = i;
+					SPMM_Value[k][threadId] = 0;
+				}
+				SPMM_Value[k][threadId] += V_Matrix_Value[p] * V_Matrix_Value[q] * d[j];
+			}
+		}
+		for (int p = csrRow[i]; p < csrRow[i + 1]; p ++)
+			csrVal[p] = SPMM_Value[csrCol[p]][threadId];
+	}
 }
