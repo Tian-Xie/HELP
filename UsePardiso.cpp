@@ -26,6 +26,7 @@ int INT_dummy;
 double DOUBLE_dummy;
 
 int Perm[MAX_ROWS];
+int* LinkerTocsrAt;
 int nnzA; double *csrValAt; int csrRowPtrAt[MAX_COLS + 1]; int *csrColIndAt;
 int nnzTriADAt; double *csrValTriADAt; int csrRowPtrTriADAt[MAX_ROWS + 1]; int *csrColIndTriADAt;
 
@@ -53,8 +54,9 @@ int LinearEquation_Construct()
 		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
 			nnzA ++;
 	csrValAt = (double*) malloc(sizeof(double) * nnzA);
-	csrColIndAt = (int*) malloc(sizeof(double) * nnzA);
-	
+	csrColIndAt = (int*) malloc(sizeof(int) * nnzA);
+	LinkerTocsrAt = (int*) malloc(sizeof(int) * nnzA);
+
 	// Construct matrix At in CSR format. 
 	// After Presolve_Init(), we can assume A is sorted.
 	nnzA = 0;
@@ -63,6 +65,7 @@ int LinearEquation_Construct()
 		csrRowPtrAt[j] = nnzA;
 		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 		{
+			LinkerTocsrAt[p] = nnzA;
 			csrValAt[nnzA] = V_Matrix_Value[p];
 			csrColIndAt[nnzA] = V_Matrix_Row[p];
 			nnzA ++;
@@ -78,7 +81,7 @@ int LinearEquation_Construct()
 #ifdef DEBUG_TRACK
 	printf("Before ADAt Allocation\n");
 #endif
-	ADAt_Allocate(&nnzTriADAt, &csrValTriADAt, csrRowPtrTriADAt, &csrColIndTriADAt);
+	ADAt_Allocate(&nnzTriADAt, &csrValTriADAt, csrRowPtrTriADAt, &csrColIndTriADAt, LinkerTocsrAt, csrRowPtrAt, csrColIndAt);
 #ifdef DEBUG_TRACK
 	printf("After ADAt Allocation\n");
 #endif
@@ -142,6 +145,7 @@ int LinearEquation_Construct()
 
 int LinearEquation_Destruct()
 {
+	if (LinkerTocsrAt) { free(LinkerTocsrAt); LinkerTocsrAt = 0; }
 	if (csrValAt) { free(csrValAt); csrValAt = 0; }
 	if (csrColIndAt) { free(csrColIndAt); csrColIndAt = 0; }
 	if (csrValTriADAt) { free(csrValTriADAt); csrValTriADAt = 0; }
@@ -161,7 +165,8 @@ void RenewLinearEquation(double* d) // d should be inversed
 #endif
 	for (int j = 0; j < n_Col; j ++)
 		dinv[j] = 1.0 / d[j];
-	ADAt_Calc(dinv, csrValTriADAt, csrRowPtrTriADAt, csrColIndTriADAt);
+	ADAt_Calc(dinv, csrValTriADAt, csrRowPtrTriADAt, csrColIndTriADAt, LinkerTocsrAt, csrValAt, csrRowPtrAt, csrColIndAt);
+	//ADAt_Calc_FMA(dinv, csrValTriADAt, csrRowPtrTriADAt, csrColIndTriADAt, LinkerTocsrAt, csrValAt, csrRowPtrAt, csrColIndAt);
 #ifdef PRINT_TIME
 	printf("%%Calc ADAt: %.2lf s\n", GetTime() - Tm);
 #endif

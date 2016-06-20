@@ -31,6 +31,14 @@
 
 using namespace std;
 
+#ifndef ATTR_ALIGN
+	#if defined(__GNUC__) // GCC
+		#define ATTR_ALIGN(n) __attribute__((aligned(n)))
+	#else
+		#define ATTR_ALIGN(n) __declspec(align(n))
+	#endif
+#endif
+
 // GlobalVar.cpp
 const int MAX_FILENAME = 100;
 extern char Filename[MAX_FILENAME];
@@ -121,7 +129,10 @@ double DotProduct(int n, double* a, double* b);
 void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
 void SetATimesVector(int Transpose, int Sign, double* v, double* dest);
 void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol);
+void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol, int* LinkerTocsrAt, int* csrRowAt, int* csrColAt);
 void ADAt_Calc(double* d, double* csrVal, int* csrRow, int* csrCol);
+void ADAt_Calc(double* d, double* csrVal, int* csrRow, int* csrCol, int* LinkerTocsrAt, double* csrValAt, int* csrRowAt, int* csrColAt);
+void ADAt_Calc_FMA(double* d, double* csrVal, int* csrRow, int* csrCol, int* LinkerTocsrAt, double* csrValAt, int* csrRowAt, int* csrColAt);
 
 int LinearEquation_Construct();
 int LinearEquation_Destruct();

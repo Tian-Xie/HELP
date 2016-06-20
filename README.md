@@ -43,6 +43,7 @@ Only CPU version is provided. You should install Intel MKL (>= 11.3) yourself.
 
 CPU version: `mkmkl.sh`. You can adjust MKL_NUM_THREADS. 
 
-Note that we provide a new version of ADAt calculation, which is accelerated with OpenMP. 
+Note that we provide a new version of ADAt calculation (preliminarily optimized), which is accelerated with OpenMP. 
 You can adjust `OMP_NUM_THREADS` by the some command like `export OMP_NUM_THREADS=16`. 
-+PLEASE GUARANTEE THAT `OMP_NUM_THREADS` IS NO MORE THAN `OMP_THREADS_MAX` DEFINED IN `LP.h`!+
+
+**PLEASE GUARANTEE THAT `OMP_NUM_THREADS` IS NO MORE THAN `OMP_THREADS_MAX` DEFINED IN `LP.h`!**
