@@ -51,15 +51,24 @@ double DotProduct(int n, double* a, double* b)
 
 void SetScaledVector(int n, double alpha, double* src, double* dest) // dest = alpha * src
 {
-	for (int i = 0; i < n; i ++)
+	if (alpha == 1)
 	{
-		if (alpha == 1)
+		for (int i = 0; i < n; i ++)
 			dest[i] = src[i];
-		else if (alpha == -1)
+	}
+	else if (alpha == -1)
+	{
+		for (int i = 0; i < n; i ++)
 			dest[i] = -src[i];
-		else if (alpha == 0)
+	}
+	else if (alpha == 0)
+	{
+		for (int i = 0; i < n; i ++)
 			dest[i] = 0;
-		else
+	}
+	else
+	{
+		for (int i = 0; i < n; i ++)
 			dest[i] = alpha * src[i];
 	}
 }
@@ -69,26 +78,50 @@ void SetScaledVector(int n, double alpha, double* src, double* dest) // dest = a
 // Sign \in {1, -1}
 void SetATimesVector(int Transpose, int Sign, double* v, double* dest) 
 {
-	for (int Col = 0; Col < n_Col; Col ++)
-		for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+	if (! Transpose) // A * v
+	{
+		if (Sign == 1)
 		{
-			int Row = V_Matrix_Row[j];
-			double Value = V_Matrix_Value[j];
-			if (! Transpose) // A * v
+			for (int Col = 0; Col < n_Col; Col ++)
 			{
-				if (Sign == 1)
-					dest[Row] += Value * v[Col];
-				else
-					dest[Row] -= Value * v[Col];
-			}
-			else // A^T * v
-			{
-				if (Sign == 1)
-					dest[Col] += Value * v[Row];
-				else
-					dest[Col] -= Value * v[Row];
+				double vCol = v[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					dest[V_Matrix_Row[j]] += V_Matrix_Value[j] * vCol;
 			}
 		}
+		else
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double vCol = v[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					dest[V_Matrix_Row[j]] -= V_Matrix_Value[j] * vCol;
+			}
+		}
+	}
+	else // A^T * v
+	{
+		if (Sign == 1)
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double destCol = dest[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					destCol += V_Matrix_Value[j] * v[V_Matrix_Row[j]];
+				dest[Col] = destCol;
+			}
+		}
+		else
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double destCol = dest[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					destCol -= V_Matrix_Value[j] * v[V_Matrix_Row[j]];
+				dest[Col] = destCol;
+			}
+		}
+	}
 }
 
 int SPMM_FLAG[OMP_THREADS_MAX][MAX_COLS];
