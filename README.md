@@ -1,21 +1,36 @@
-# LPSolver
+# HELP (Homogeneous and self-dual Efficient Linear Programming)
+
 An experimental implementation of Homogeneous and Self-Dual Algorithm for Linear Programming. 
 
-**Author**: Tian Xie (Research Center for Management Science and Information Analytics, Shanghai University of Finance and Economics)
+### Author
 
-**Progress**: Currently working on Presolve and Cross-over. HSD Algorithm without presolving is preliminarily completed. Some numerical issues about LLt factorization is known. (LDLt is more numerically robust.)
+Tian Xie (Research Center for Management Science and Information Analytics, Shanghai University of Finance and Economics)
 
-**Disclaimer**: This program is currently not finished testing. No warrenty. Use it at your own risk! 
+### Target
 
-#### Credits ####
+To explore the possibility of parallelization on multi-core CPU and GPU.
 
-Fundamental implementation idea originated from COPL_LP (Xiong Zhang and Yinyu Ye). See http://web.stanford.edu/~yyye/Col.html .
+### Progress
 
-#### Third Party Libraries ####
+Currently working on Presolve and Cross-over. HSD Algorithm without presolving is preliminarily completed. Some numerical issues about LLt factorization is known. (LDLt is more numerically robust.)
 
-Matrix Decomposition is currently supported by three alternative choices: 
+### Disclaimer
 
-###### 1. CHOLMOD in SuiteSparse (Timothy A. Davis). ######
+This program is currently not finished testing. No warrenty. Use it at your own risk! 
+
+# Credits
+
+1. Fundamental implementation idea originated from COPL_LP (Xiong Zhang and Yinyu Ye). See http://web.stanford.edu/~yyye/Col.html .
+
+2. Erling D. Andersen, Knud D. Andersen. (2000). The Mosek Interior Point Optimizer for Linear Programming: An Implementation of the Homogeneous Algorithm. Applied Optimization 33, 197-232.
+
+# Third Party Libraries
+
+##A. Sparse Cholesky Decomposition
+
+Sparse Cholesky Decomposition is currently supported by three alternative choices: 
+
+### 1. CHOLMOD in SuiteSparse (Timothy A. Davis). 
 
 **Website**: <http://www.suitesparse.com>
 
@@ -27,7 +42,7 @@ CPU version: `mkcpu.sh`. You can adjust MKL_NUM_THREADS by the some command like
 
 CPU-GPU version: `mkgpu.sh`. If NVIDIA GPU is not detected, it will turn to CPU version automatically. Currently only for large enough problems, CPU-GPU version can outperform CPU version. 
 
-###### 2. cuSOLVER in CUDAToolkit 7.5 (NVIDIA Corp.) ######
+### 2. cuSOLVER in CUDAToolkit 7.5 (NVIDIA Corp.)
 
 **Website**: <https://developer.nvidia.com/cusolver>
 
@@ -35,7 +50,7 @@ Only CPU-GPU version is provided. You should install CUDAToolkit (>= 7.5) yourse
 
 CPU-GPU version: `mkcu.sh`. You need an NVIDIA GPU to run this program. 
 
-###### 3. Intel MKL PARDISO (Intel Corp.) ######
+### 3. Intel MKL PARDISO (Intel Corp.)
 
 **Website**: <https://software.intel.com/en-us/node/470282>
 
@@ -47,3 +62,13 @@ Note that we provide a new version of ADAt calculation (preliminarily optimized)
 You can adjust `OMP_NUM_THREADS` by the some command like `export OMP_NUM_THREADS=16`. 
 
 **PLEASE GUARANTEE THAT `OMP_NUM_THREADS` IS NO MORE THAN `OMP_THREADS_MAX` DEFINED IN `LP.h`!**
+
+##B. Sparse LU Decomposition
+
+### LUSOL (Fortran 77 version by Michael Saunders, C Translation by Kjell Eikland)
+
+**Website**: <http://web.stanford.edu/group/SOL/software/lusol/>
+
+**Reference**: P. E. Gill, W. Murray, M. A. Saunders and M. H. Wright (1987). Maintaining LU factors of a general sparse matrix, Linear Algebra and its Applications 88/89, 239-270.
+
+LUSOL supports Bartels-Golub-Reid updates for column replacement. Note that C Translation is used in another MILP solver: lp_solve (<http://lpsolve.sourceforge.net/5.5/>).
