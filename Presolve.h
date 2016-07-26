@@ -11,34 +11,15 @@
  *           (Xiong Zhang and Yinyu Ye)                                       *
  *           See http://web.stanford.edu/~yyye/Col.html .                     *
  ******************************************************************************/
+ 
+#ifndef _PRESOLVE_H
 
-#ifndef _HASH_H
+#define _PRESOLVE_H
 
-#define _HASH_H
-
-#pragma once
-
-#include "LP.h"
-
-const int HASH_OBJECTIVE = -1;
-const int HASH_NOT_FOUND = -2;
-const int HASH_INSERT_FOUND = 1;
-
-class THashTable
-{
-private:
-	int SIZE;
-	int HashMod;
-	int* Pos;
-	int* Next;
-	int* Head;
-	unsigned long long* Key;
-public:
-	THashTable();
-	int Init(int _LENGTH, int _HashMod);
-	int Release();
-	int Find(unsigned long long x); // HASH_NOT_FOUND = Not Found, HASH_OBJECTIVE = Objective
-	int Insert(unsigned long long x, int _Pos);
-};
+extern int Presolve_Modified;
+extern double Row_1Norm[MAX_ROWS], Col_1Norm[MAX_COLS];
+extern int Row_Disable[MAX_ROWS], Col_Disable[MAX_COLS];
+extern int Row_Element_Count[MAX_ROWS], Col_Element_Count[MAX_COLS];
+extern int Presolve_Linked_List_Head, Presolve_Linked_List_Tail, Presolve_Linked_List_Next[MAX_ROWS + MAX_COLS];
 
 #endif

@@ -16,6 +16,7 @@
 // Erling D. Andersen and Knud D. Andersen, Presolving in linear programming, Mathematical Programming 71 (1995) 221-245.
 
 #include "LP.h"
+#include "Presolve.h"
 
 int Presolve_Modified;
 double Row_1Norm[MAX_ROWS], Col_1Norm[MAX_COLS];
@@ -1069,16 +1070,13 @@ void Presolve_FinalizeModel()
 	}
 }
 
-// The following program is mainly based on: 
-// Erling D. Andersen. Finding all linearly dependent rows in large-scale linear programming, Optimization Methods and Software 6:3 (1995), 219-227.
-
-
-
 int Presolve_Main()
 {
 	Presolve_Init();
 	Presolve_Modified = 0;
 
+	Presolve_Linear_Dependent_Main();
+	
 	if (PRESOLVE_LEVEL) // TODO
 	{
 		Presolve_Simple_Col_Check();

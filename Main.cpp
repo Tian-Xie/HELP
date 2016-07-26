@@ -22,7 +22,9 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{
 		// Input Filename
-		strcpy(Filename, "sparse5000");
+		strcpy(Filename, "QAP15.SIF");
+		//strcpy(Filename, "BRANDY.SIF");
+		//strcpy(Filename, "sparse2000");
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example.mps");
 	}
@@ -38,15 +40,17 @@ int main(int argc, char* argv[])
 	Tm = GetTime();
 	CheckError(CRUSH_Main(), "Crushing Failed!");
 	printf("Crushing: %.2lf s\n", GetTime() - Tm);
+	//MPS_PrintMatrix(); // Debug only
 
 	Tm = GetTime();
 	CheckError(Presolve_Main(), "Presolving Failed!");
 	printf("Presolving: %.2lf s\n", GetTime() - Tm);
-
+	
+	/*
 	Tm = GetTime();
 	CheckError(HSD_Main(), "Homogeneous and Self-Dual Numerical Solving Failed!");
 	printf("Homogeneous and Self-Dual Numerical Solving: %.2lf s\n", GetTime() - Tm);
-
+	*/
 #ifdef _MSC_VER
 	system("pause");
 #endif

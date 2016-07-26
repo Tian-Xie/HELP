@@ -21,6 +21,7 @@ const int MAX_LINE_LENGTH = 256;
 char Buf[MAX_LINE_LENGTH];
 unsigned long long Obj_Row;
 THashTable Hash_Row, Hash_Col;
+int ColItemNo;
 
 void MPS_CopyName(char* Dest, char* Src)
 {
@@ -83,6 +84,8 @@ void MPS_ROWS()
 		if (Buf[0] != ' ') // End of ROWS
 			break;
 		char Type = toupper(Buf[1]);
+		if (Type == ' ')
+			Type = toupper(Buf[2]);
 		if (Type != 'N' && Type != 'E' && Type != 'G' && Type != 'L')
 		{
 			printf("        Warning: Unknown Type: \"%c\", Ignored.\n", Type);
@@ -119,9 +122,12 @@ void MPS_COLUMNS()
 	if (strncmp(Buf, "COLUMNS", 7))
 		CheckError(1, "MPS_COLUMNS: Expected COLUMNS!");
 	printf("    COLUMNS SECTION\n");
+	ColItemNo = 0;
 	while (1)
 	{
+		ColItemNo ++;
 		MPS_ReadLine();
+
 		if (Buf[0] != ' ') // End of COLUMNS
 			break;
 		unsigned long long ColHash = MPS_HashCode(Buf + CARD_POS[0]);
@@ -371,4 +377,16 @@ int MPS_ReadFile()
 	Hash_Col.Release();
 	printf("ReadMPSFile END\n");
 	return 0;
+}
+
+void MPS_PrintMatrix()
+{
+	FILE* Mout = fopen("Matrix.txt", "w");
+	fprintf(Mout, "nrow = %d;\n", n_Row);
+	fprintf(Mout, "ncol = %d;\n", n_Col);
+	fprintf(Mout, "A = zeros(nrow, ncol);\n");
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
+			fprintf(Mout, "A(%d, %d) = %.8lf;\n", V_Matrix_Row[p] + 1, j + 1, V_Matrix_Value[p]);
+	fclose(Mout);
 }

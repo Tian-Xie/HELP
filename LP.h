@@ -53,8 +53,8 @@ extern char Enabled_BOUNDS[];
 // Problem Related
 #ifdef _MSC_VER
 // Local PC
-const int MAX_ROWS = 10000;
-const int MAX_COLS = 10000;
+const int MAX_ROWS = 100000;
+const int MAX_COLS = 100000;
 const int MAX_ELEMENTS = 10000000;
 #else
 // Server
@@ -87,6 +87,11 @@ const double Infeasibility_Tolerance = 1e-8;
 const double Gap_Tolerance = 1e-8;
 const double Primal_Infeasibility_Tolerance = 1e-8;
 const double Dual_Infeasibility_Tolerance = 1e-8;
+
+// LU Parameter
+const int STEPS_MODIFICATION = 100;
+const double TOLAPIV = 1e-8;
+const double TOLPRIMAL = 1e-8;
 
 extern char Problem_Name[MAX_PROBLEM_NAME];
 extern int n_Row, n_Col, n_Element;
@@ -156,8 +161,12 @@ int Prog_Init();
 
 // MPSRead.cpp
 int MPS_ReadFile();
+void MPS_PrintMatrix();
 
 // Presolve.cpp
 int Presolve_Main();
+
+// Presolve_Lindep.cpp
+void Presolve_Linear_Dependent_Main();
 
 #endif
