@@ -29,9 +29,19 @@ double V_RHS_r[MAX_ROWS]; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r[i], V_
 double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
 // A, Column Majored Matrix, Linked List
 int V_Matrix_Col_Head[MAX_COLS], V_Matrix_Col_Next[MAX_ELEMENTS], V_Matrix_Col_Prev[MAX_ELEMENTS];
-int V_Matrix_Row_Head[MAX_COLS], V_Matrix_Row_Next[MAX_ELEMENTS], V_Matrix_Row_Prev[MAX_ELEMENTS];
+int V_Matrix_Row_Head[MAX_ROWS], V_Matrix_Row_Next[MAX_ELEMENTS], V_Matrix_Row_Prev[MAX_ELEMENTS];
 int V_Matrix_Row[MAX_ELEMENTS], V_Matrix_Col[MAX_ELEMENTS];
 double V_Matrix_Value[MAX_ELEMENTS];
+
+// Model should be reduced, save some legacies
+int n_Row_ORIG, n_Col_ORIG;
+int Row_OldToNew[MAX_ROWS], Col_OldToNew[MAX_COLS]; // Index Mapping
+int Row_NewToOld[MAX_ROWS], Col_NewToOld[MAX_COLS]; // Index Mapping
+double V_Cost_ORIG[MAX_COLS];
+double V_RHS_ORIG[MAX_ROWS];
+double V_LB_ORIG[MAX_COLS], V_UB_ORIG[MAX_COLS];
+int V_Matrix_Col_Head_ORIG[MAX_COLS], V_Matrix_Row_Head_ORIG[MAX_ROWS];
+int V_Matrix_Row_ORIG[MAX_ELEMENTS], V_Matrix_Col_ORIG[MAX_ELEMENTS];
 
 // Crushing
 double V_Cost_Intercept; // After crushing, objective may have nonzero intercept

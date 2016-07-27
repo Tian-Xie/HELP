@@ -53,9 +53,9 @@ int LinearEquation_Construct()
 
 #ifdef PRINT_DEBUG
 	printf("A = zeros(%d, %d);\n", n_Row, n_Col);
-	for (int i = 0; i < n_Row; i ++)
-		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
-			printf("A(%d, %d) = %lf;\n", i + 1, V_Matrix_Col[p] + 1, V_Matrix_Value[p]);
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
+			printf("A(%d, %d) = %lf;\n", V_Matrix_Row[p] + 1, j + 1, V_Matrix_Value[p]);
 #endif
 
 #ifdef PRINT_TIME
@@ -63,8 +63,8 @@ int LinearEquation_Construct()
 #endif
 	// Count A size
 	nnzA = 0;
-	for (int i = 0; i < n_Row; i ++)
-		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 			nnzA ++;
 	csrValAt = (double*) malloc(sizeof(double) * nnzA);
 	csrColIndAt = (int*) malloc(sizeof(double) * nnzA);

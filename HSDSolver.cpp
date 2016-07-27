@@ -34,7 +34,7 @@ double HSD_relative_gap; // Relative Gap = |PObj - DObj| / (1 + |DObj|)
 // Dual Infeasibility = ||r_d||_2 / (tau + sqrt(sum_LB(z_j^2) + sum_UB(zu_k^2 + yu_k^2) + sum(y_j^2)))
 double HSD_primal_infeas, HSD_dual_infeas;
 double HSD_infe; // Infe = (tau / kappa) / (tau0 / kappa0)
-int HSD_status; // 0 - OK, 1 - Stalled, 2 - Iteration Limit Exceeded, 3 - Unknown Error
+int HSD_Status; // 0 - OK, 1 - Stalled, 2 - Iteration Limit Exceeded, 3 - Unknown Error
 
 double HSD_D[MAX_COLS], HSD_D_u[MAX_COLS]; // D: X^{-1} * S, the diagonal matrix
 double HSD_D_g; // D_g = kappa / tau + D[n_LB + i] * (x[n_LB + i] / tau)^2
@@ -62,7 +62,7 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 		xz_sum += tmp;
 		if (D[i] <= 0.0)
 		{
-			HSD_status = HSD_STATUS_STALLED;
+			HSD_Status = HSD_STATUS_STALLED;
 			printf("HSD_Calc_Newton_Parameters: Negative Iterate.\n");
 			return;
 		}
@@ -76,7 +76,7 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 		xz_sum += tmp;
 		if (D_u[i] <= 0.0)
 		{
-			HSD_status = HSD_STATUS_STALLED;
+			HSD_Status = HSD_STATUS_STALLED;
 			printf("HSD_Calc_Newton_Parameters: Negative Iterate.\n");
 			return;
 		}
@@ -544,7 +544,7 @@ void HSD_UpdateStep(double eta, double p_step, double d_step)
 void HSD_GetInitPoint()
 {
 	// Section 4.4: InitPoint (x, tau, y, z, kappa) = (e, 1, 0, e, 1)
-	HSD_status = HSD_STATUS_OK;
+	HSD_Status = HSD_STATUS_OK;
 	for (int i = 0; i < n_LB; i ++)
 		HSD_x[i] = HSD_z[i] = 1.0;
 	for (int i = 0; i < n_UB; i ++)
@@ -570,7 +570,7 @@ void HSD_GetInitPoint()
 
 	HSD_rho = 1.0;
 	HSD_Calc_Newton_Parameters(HSD_D, HSD_D_u, HSD_D_g, HSD_r_p, HSD_r_d, HSD_r_g, HSD_mu, HSD_rfval);
-	if (HSD_status != HSD_STATUS_OK)
+	if (HSD_Status != HSD_STATUS_OK)
 		return;
 	// Remember to factorize ADA^T!
 	RenewLinearEquation(HSD_D);
@@ -690,7 +690,7 @@ printf("Into Iteration: Iter = %d\n", Iter);
 		printf("+------+------------------+------------------+----------+----------+----------+\n");
 
 		// Stopping Criteria
-		if (HSD_status != HSD_STATUS_OK || // Exception
+		if (HSD_Status != HSD_STATUS_OK || // Exception
 			(HSD_mu <= Mu_Tolerance * mu0 && HSD_infe < Infeasibility_Tolerance) ||
 			(HSD_relative_gap <= Gap_Tolerance && HSD_primal_infeas <= Primal_Infeasibility_Tolerance && HSD_dual_infeas <= Dual_Infeasibility_Tolerance))
 			break;
@@ -744,7 +744,7 @@ printf("Into Iteration: Iter = %d\n", Iter);
 		else
 		{
 			printf("HSD_Solving: Inaccurate Newton Direction, Stalled.\n");
-			HSD_status = HSD_STATUS_STALLED;
+			HSD_Status = HSD_STATUS_STALLED;
 			break;
 		}
 
@@ -786,14 +786,14 @@ printf("Into Iteration: Iter = %d\n", Iter);
 		if (p_step < Variable_Tolerance && d_step < Variable_Tolerance)
 		{
 			printf("HSD_Solving: Warning: Newton-like starting point with 0 stepsize, stop here.\n");
-			HSD_status = HSD_STATUS_UNKNOWN_ERROR;
+			HSD_Status = HSD_STATUS_UNKNOWN_ERROR;
 			break;
 		}
 		HSD_UpdateStep(eta, p_step, d_step);
 	}
 	
 	if (Iter >= Max_Iterations)
-		HSD_status = HSD_STATUS_ITER_LIMIT;
+		HSD_Status = HSD_STATUS_ITER_LIMIT;
 }
 
 int HSD_Main()

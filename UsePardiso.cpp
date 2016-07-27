@@ -47,22 +47,22 @@ int LinearEquation_Construct()
 
 #ifdef PRINT_DEBUG
 	printf("A = zeros(%d, %d);\n", n_Row, n_Col);
-	for (int i = 0; i < n_Row; i ++)
-		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
-			printf("A(%d, %d) = %lf;\n", i + 1, V_Matrix_Col[p] + 1, V_Matrix_Value[p]);
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
+			printf("A(%d, %d) = %lf;\n", V_Matrix_Row[p] + 1, j + 1, V_Matrix_Value[p]);
 #endif
 
 	// Count A size
 	nnzA = 0;
-	for (int i = 0; i < n_Row; i ++)
-		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 			nnzA ++;
 	csrValAt = (double*) malloc(sizeof(double) * nnzA);
 	csrColIndAt = (int*) malloc(sizeof(int) * nnzA);
-	LinkerTocsrAt = (int*) malloc(sizeof(int) * nnzA);
+	LinkerTocsrAt = (int*) malloc(sizeof(int) * n_Element); // Note here! not nnzA
 
 	// Construct matrix At in CSR format. 
-	// After Presolve_Init(), we can assume A is sorted.
+	// After Presolve_Init(), we can assume A is sorted by column.
 	nnzA = 0;
 	for (int j = 0; j < n_Col; j ++)
 	{

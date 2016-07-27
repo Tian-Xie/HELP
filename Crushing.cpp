@@ -26,7 +26,11 @@ int CRUSH_Main()
 		V_Crushing_Add[Col] = 0.0;
 
 		if (V_LB[Col] > V_UB[Col])
-			CheckError(1, "CRUSH_Main: Lower Bound > Upper Bound!");
+		{
+			LP_Status = LP_STATUS_PRIMAL_INFEASIBLE;
+			printf("CRUSH_Main: Lower Bound > Upper Bound!\n");
+			return 0;
+		}
 		if (fabs(V_LB[Col]) < Input_Tolerance) // Lower Bound is already 0
 			continue;
 		if (V_LB[Col] >= -MaxFinite) // Lower Bound is Finite, use (x[i] - V_LB[i]) to instead (x[i])

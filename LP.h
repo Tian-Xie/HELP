@@ -69,7 +69,9 @@ const double MaxPositive = 1e+30;
 const double MaxFinite = 0.99995 * MaxPositive;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
-const int PRESOLVE_LEVEL = 0;
+const int PRESOLVE_LINDEP = 1;
+const int PRESOLVE_LEVEL = 5;
+const int PRESOLVE_LOOP = 5;
 
 // Problem Status
 const int LP_STATUS_OK = 0;
@@ -102,7 +104,7 @@ extern double V_RHS_r[MAX_ROWS]; // RANGES, if Row_Type[i] == 'R', then [V_RHS_r
 extern double V_LB[MAX_COLS], V_UB[MAX_COLS]; // For Variable x[j], V_LB[j] <= x[j] <= V_UB[j];
 // A, Column Majored Matrix, Linked List
 extern int V_Matrix_Col_Head[MAX_COLS], V_Matrix_Col_Next[MAX_ELEMENTS], V_Matrix_Col_Prev[MAX_ELEMENTS];
-extern int V_Matrix_Row_Head[MAX_COLS], V_Matrix_Row_Next[MAX_ELEMENTS], V_Matrix_Row_Prev[MAX_ELEMENTS];
+extern int V_Matrix_Row_Head[MAX_ROWS], V_Matrix_Row_Next[MAX_ELEMENTS], V_Matrix_Row_Prev[MAX_ELEMENTS];
 extern int V_Matrix_Row[MAX_ELEMENTS], V_Matrix_Col[MAX_ELEMENTS];
 extern double V_Matrix_Value[MAX_ELEMENTS];
 
@@ -124,8 +126,11 @@ extern int V_Presolve_Duplicate_Column_k[MAX_COLS], V_Presolve_Duplicate_Column_
 extern int n_LB, n_UB, n_FR; 
 // Rearranged as: (a) x[0 ~ (n_UB - 1)]: With LB and UB; 
 //                (b) x[n_UB ~ (n_LB - 1)]: With LB only; 
-//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free.
-extern int RecoverOrder[MAX_COLS], TransOrder[MAX_COLS];
+//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free; 
+//                (d) x[(n_LB + n_FR) ~ n_Col]: Deleted.
+extern int n_Row_ORIG, n_Col_ORIG;
+extern int Row_OldToNew[MAX_ROWS], Col_OldToNew[MAX_COLS]; // Index Mapping
+extern int Row_NewToOld[MAX_ROWS], Col_NewToOld[MAX_COLS]; // Index Mapping
 
 // Crushing.cpp
 int CRUSH_Main();
@@ -149,10 +154,11 @@ void RenewLinearEquation(double* d);
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2);
 
 // HSDSolver.cpp
+extern int HSD_Status; 
 const int HSD_STATUS_OK = 0;
 const int HSD_STATUS_STALLED = 1;
 const int HSD_STATUS_ITER_LIMIT = 2;
-const int HSD_STATUS_UNKNOWN_ERROR = 3;
+const int HSD_STATUS_UNKNOWN_ERROR = 3; 
 int HSD_Init();
 int HSD_Main();
 
@@ -168,5 +174,8 @@ int Presolve_Main();
 
 // Presolve_Lindep.cpp
 void Presolve_Linear_Dependent_Main();
+
+// Report.cpp
+void Report_Solution();
 
 #endif

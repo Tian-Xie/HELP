@@ -151,7 +151,6 @@ void Presolve_Fix_Variable(int j, double Val)
 	{
 		int i = V_Matrix_Row[p];
 		V_RHS[i] -= V_Matrix_Value[p] * Val;
-		Row_Element_Count[i] --;
 	}
 	V_Cost_Intercept += V_Cost[j] * Val;
 
@@ -180,6 +179,8 @@ void Presolve_Set_Variable_LB(int j, double lb)
 	if (V_UB[j] <= MaxFinite)
 		V_UB[j] -= V_LB[j];
 	V_LB[j] = 0.0;
+
+	Presolve_Modified = 1;
 }
 
 int Presolve_Simple_Col_Check()
@@ -238,7 +239,7 @@ int Presolve_Simple_Col_Check()
 	return 1;
 }
 
-int Presolve_Null_Singleton_Row()
+int Presolve_Null_Row()
 {
 	// (i) An empty row
 	// Exist i: a_{ij} = 0, forall j
@@ -260,6 +261,11 @@ int Presolve_Null_Singleton_Row()
 		}
 	}
 
+	return 1;
+}
+
+int Presolve_Singleton_Row()
+{
 	// (v) A singleton row
 	// Exist (i, k): a_{ij} = 0, forall j != k, a_{ik} != 0
 	// x_k = b_i / a_{ik}
@@ -277,11 +283,13 @@ int Presolve_Null_Singleton_Row()
 			Presolve_Linked_List_Tail = i;
 		}
 	}
-	for (int i = Presolve_Linked_List_Head; i != -1; i = Presolve_Linked_List_Next[i])
+	if (Presolve_Linked_List_Tail == -1)
+		return 1;
+	for (int i = Presolve_Linked_List_Head; ; i = Presolve_Linked_List_Next[i])
 	{
 		int p = V_Matrix_Row_Head[i];
 		int j = V_Matrix_Col[p];
-		int a_ij = V_Matrix_Value[p];
+		double a_ij = V_Matrix_Value[p];
 		int b_i = V_RHS[i];
 		double x_j = b_i / a_ij;
 		if (x_j < V_LB[j] || x_j > V_UB[j])
@@ -299,6 +307,10 @@ int Presolve_Null_Singleton_Row()
 			}
 		}
 		Presolve_Fix_Variable(j, x_j);
+		Presolve_Delete_Row(i);
+		Row_Disable[i] = 1;
+		if (i == Presolve_Linked_List_Tail)
+			break;
 	}
 	return 1;
 }
@@ -319,7 +331,7 @@ int Presolve_Forcing_Row()
 		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
 		{
 			int j = V_Matrix_Col[p];
-			int a_ij = V_Matrix_Value[p];
+			double a_ij = V_Matrix_Value[p];
 
 			if (Row_UB[i] <= MaxFinite)
 			{
@@ -378,7 +390,7 @@ int Presolve_Forcing_Row()
 		for (int p = V_Matrix_Row_Head[i]; p != -1; )
 		{
 			int j = V_Matrix_Col[p];
-			int a_ij = V_Matrix_Value[p];
+			double a_ij = V_Matrix_Value[p];
 			int next_p = V_Matrix_Row_Next[p];
 			if ((a_ij > 0 && Row_UB[i] - V_RHS[i] < Variable_Tolerance) || 
 				(a_ij < 0 && V_RHS[i] - Row_LB[i] < Variable_Tolerance))
@@ -414,7 +426,7 @@ int Presolve_Dominated_Row()
 			int k = V_Matrix_Col[p];
 			if (j == k)
 				continue;
-			int a_ik = V_Matrix_Value[p];
+			double a_ik = V_Matrix_Value[p];
 			if (min_j >= -MaxFinite)
 			{
 				if (a_ik > 0)
@@ -746,7 +758,7 @@ int Presolve_Dominated_Col()
 
 int Presolve_Row_Cnt_NonSingleton[MAX_ROWS], Presolve_Row_Cnt_Singleton[MAX_ROWS];
 int Presolve_Row_Singleton_Pos[MAX_ROWS][2]; // Store the pointer, not col ID! 
-int Presolve_Row_First_NonSingleton_Val[MAX_ROWS]; // Store the value! 
+double Presolve_Row_First_NonSingleton_Val[MAX_ROWS]; // Store the value! 
 int Presolve_Row_Same_NonSingleton_Head[MAX_COLS], Presolve_Row_Same_NonSingleton_Next[MAX_ROWS];
 
 int Presolve_Duplicate_Row()
@@ -829,7 +841,7 @@ int Presolve_Duplicate_Row()
 				else if (Presolve_Row_Cnt_Singleton[i] == 0 && Presolve_Row_Cnt_Singleton[k] == 1)
 				{
 					int j = V_Matrix_Col[Presolve_Row_Singleton_Pos[k][0]];
-					int a_kj = V_Matrix_Value[Presolve_Row_Singleton_Pos[k][0]];
+					double a_kj = V_Matrix_Value[Presolve_Row_Singleton_Pos[k][0]];
 					double x_j = (V_RHS[k] - v * V_RHS[i]) / a_kj;
 					if (x_j < V_LB[j] || x_j > V_UB[j])
 					{
@@ -1011,19 +1023,28 @@ int Presolve_Duplicate_Col()
 	return 1;
 }
 
-int Temp[MAX_COLS];
+int Temp[MAX_COLS + MAX_ROWS];
 
-// TODO: Will be modified when row dependency checking is done!
 void Presolve_FinalizeModel()
 {
+	// Preserve the Original Model and Finalize the Reduced Model
+	// First backup some necessary information
+	n_Row_ORIG = n_Row;
+	n_Col_ORIG = n_Col;
+
+	// I. Columns Reorder
 	// Counting n_LB, n_UB, n_FR
+	int n_RealCol = 0;
 	n_LB = n_UB = n_FR = 0;
-	for (int i = 0; i < n_Col; i ++)
+	for (int j = 0; j < n_Col; j ++)
 	{
-		if (V_LB[i] == 0.0) // With LB
+		if (Col_Disable[j])
+			continue;
+		n_RealCol ++;
+		if (V_LB[j] == 0.0) // With LB
 		{
 			n_LB ++;
-			if (V_UB[i] <= MaxFinite) // With LB and UB
+			if (V_UB[j] <= MaxFinite) // With LB and UB
 				n_UB ++;
 		}
 		else
@@ -1031,25 +1052,29 @@ void Presolve_FinalizeModel()
 	}
 	// Rearranged as: (a) x[0 ~ (n_UB - 1)]: With LB and UB; 
 	//                (b) x[n_UB ~ (n_LB - 1)]: With LB only; 
-	//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free.
-	int Ptr1 = 0, Ptr2 = n_UB, Ptr3 = n_LB;
-	for (int i = 0; i < n_Col; i ++)
-		if (V_LB[i] == 0.0 && V_UB[i] <= MaxFinite) // With LB and UB
-			TransOrder[Ptr1 ++] = i;
-		else if (V_LB[i] == 0.0) // With LB only
-			TransOrder[Ptr2 ++] = i;
+	//                (c) x[n_LB ~ (n_LB + n_FR - 1)]: Free; 
+	//                (d) x[(n_LB + n_FR) ~ n_Col]: Deleted.
+	int Ptr1 = 0, Ptr2 = n_UB, Ptr3 = n_LB, Ptr4 = n_LB + n_FR;
+	for (int j = 0; j < n_Col; j ++)
+	{
+		if (Col_Disable[j])
+			Col_NewToOld[Ptr4 ++] = j;
+		else if (V_LB[j] == 0.0 && V_UB[j] <= MaxFinite) // With LB and UB
+			Col_NewToOld[Ptr1 ++] = j;
+		else if (V_LB[j] == 0.0) // With LB only
+			Col_NewToOld[Ptr2 ++] = j;
 		else
-			TransOrder[Ptr3 ++] = i;
-	// To call original index, just use x[RecoverOrder[i]] instead of x[i]. 
-	for (int i = 0; i < n_Col; i ++)
-		RecoverOrder[TransOrder[i]] = i;
-
+			Col_NewToOld[Ptr3 ++] = j;
+	}
+	// To call original index, just use x[Col_OldToNew[i]] instead of x[i]. 
+	for (int j = 0; j < n_Col; j ++)
+		Col_OldToNew[Col_NewToOld[j]] = j;
 	// Perform Reordering
 	memset(Temp, 0, sizeof(int) * n_Col);
 	for (int i = 0; i < n_Col; i ++)
 	{
 		int j = i;
-		int Next = TransOrder[j];
+		int Next = Col_NewToOld[j];
 		if (j == Next || Temp[i])
 			continue;
 		Temp[j] = 1;
@@ -1061,34 +1086,139 @@ void Presolve_FinalizeModel()
 			swap(V_Matrix_Col_Head[j], V_Matrix_Col_Head[Next]);
 			swap(V_Crushing_Times[j], V_Crushing_Times[Next]);
 			swap(V_Crushing_Add[j], V_Crushing_Add[Next]);
+			swap(Col_Element_Count[j], Col_Element_Count[Next]);
+			swap(Col_Disable[j], Col_Disable[Next]);
 			Temp[Next] = 1;
 			j = Next;
-			Next = TransOrder[j];
+			Next = Col_NewToOld[j];
 			if (Temp[Next])
 				break;
 		}
 	}
+
+	// II. Rows Reorder
+	int n_RealRow = 0;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		if (Row_Disable[i])
+			continue;
+		n_RealRow ++;
+	}
+	Ptr1 = 0;
+	Ptr2 = n_RealRow;
+	for (int i = 0; i < n_Row; i ++)
+		if (Row_Disable[i])
+			Row_NewToOld[Ptr2 ++] = i;
+		else
+			Row_NewToOld[Ptr1 ++] = i;
+	
+	for (int i = 0; i < n_Row; i ++)
+		Row_OldToNew[Row_NewToOld[i]] = i;
+	memset(Temp, 0, sizeof(int) * n_Row);
+	for (int i = 0; i < n_Row; i ++)
+	{
+		int j = i;
+		int Next = Row_NewToOld[j];
+		if (j == Next || Temp[i])
+			continue;
+		Temp[j] = 1;
+		while (true)
+		{
+			swap(V_RHS[j], V_RHS[Next]);
+			swap(V_Matrix_Row_Head[j], V_Matrix_Row_Head[Next]);
+			swap(Row_Element_Count[j], Row_Element_Count[Next]);
+			swap(Row_Disable[j], Row_Disable[Next]);
+			Temp[Next] = 1;
+			j = Next;
+			Next = Row_NewToOld[j];
+			if (Temp[Next])
+				break;
+		}
+	}
+
+	// III. Update V_Matrix_Row and V_Matrix_Col
+	for (int i = 0; i < n_Element; i ++)
+	{
+		V_Matrix_Row[i] = Row_OldToNew[V_Matrix_Row[i]];
+		V_Matrix_Col[i] = Col_OldToNew[V_Matrix_Col[i]];
+	}
+
+	// Note that this reorder does not affect every sorted columns
+
+	// IV. Update n_Row and n_Col
+	n_Row = n_RealRow;
+	n_Col = n_RealCol;
+	int nnz = 0;
+	for (int j = 0; j < n_Col; j ++)
+		nnz += Col_Element_Count[j];
+	printf("After Presolving, n_Row = %d, n_Col = %d, n_Element = %d\n", n_Row, n_Col, nnz);
 }
 
 int Presolve_Main()
 {
 	Presolve_Init();
-	Presolve_Modified = 0;
-
-	Presolve_Linear_Dependent_Main();
 	
-	if (PRESOLVE_LEVEL) // TODO
+	if (PRESOLVE_LINDEP) // Check Linear Dependent Rows
 	{
-		Presolve_Simple_Col_Check();
-		Presolve_Null_Singleton_Row();
-		Presolve_Forcing_Row();
-		Presolve_Dominated_Row();
-		Presolve_Doubleton_Row_Singleton_Col();
-		Presolve_Dominated_Col();
-		Presolve_Duplicate_Row();
-		Presolve_Duplicate_Col();
+		Presolve_Linear_Dependent_Main();
+		if (LP_Status != LP_STATUS_OK)
+			return 0;
+		for (int i = 0; i < n_Row; i ++)
+			if (Row_Disable[i])
+				Presolve_Delete_Row(i);
 	}
+	
+	int Loop_Count = 0;
+	do
+	{
+		Loop_Count ++;
+		Presolve_Modified = 0;
+		if (PRESOLVE_LEVEL >= 1)
+		{
+			Presolve_Simple_Col_Check();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+			Presolve_Null_Row();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+			Presolve_Singleton_Row();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+			Presolve_Forcing_Row();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+			Presolve_Dominated_Row();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+			Presolve_Doubleton_Row_Singleton_Col();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+		}
+		if (PRESOLVE_LEVEL >= 2)
+		{
+			Presolve_Dominated_Col();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+		}
+		if (PRESOLVE_LEVEL >= 3)
+		{
+			Presolve_Duplicate_Row();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+		}
+		if (PRESOLVE_LEVEL >= 4)
+		{
+			Presolve_Duplicate_Col();
+			if (LP_Status != LP_STATUS_OK)
+				return 0;
+		}
+	}
+	while (Presolve_Modified && Loop_Count < PRESOLVE_LOOP);
 
+	Presolve_Null_Row();
+	if (LP_Status != LP_STATUS_OK)
+		return 0;
+	
 	Presolve_FinalizeModel();
 	return 0;
 }

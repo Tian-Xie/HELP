@@ -182,7 +182,7 @@ void Presolve_Linear_Dependent_Solve()
 				DOWN += Presolve_dTemp[k] * Presolve_dTemp[k];
 			if (fabs(Presolve_dTemp[i + 1]) > TOLPRIMAL * sqrt(DOWN)) // Infeasible
 			{
-				printf("Problem is primal infeasible!\n");
+				printf("LinDep: Problem is Primal Infeasible!\n");
 				LP_Status = LP_STATUS_PRIMAL_INFEASIBLE;
 				return;
 			}
@@ -215,7 +215,7 @@ void Presolve_Linear_Dependent_Solve()
 			}
 		}
 	}
-	printf("Count_LDP = %d\n", Count_LDP);
+	printf("    %d Linearly Dependent Row(s) Detected.\n", Count_LDP);
 }
 
 void Presolve_Linear_Dependent_Main()

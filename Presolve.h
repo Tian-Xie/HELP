@@ -16,10 +16,7 @@
 
 #define _PRESOLVE_H
 
-extern int Presolve_Modified;
-extern double Row_1Norm[MAX_ROWS], Col_1Norm[MAX_COLS];
 extern int Row_Disable[MAX_ROWS], Col_Disable[MAX_COLS];
 extern int Row_Element_Count[MAX_ROWS], Col_Element_Count[MAX_COLS];
-extern int Presolve_Linked_List_Head, Presolve_Linked_List_Tail, Presolve_Linked_List_Next[MAX_ROWS + MAX_COLS];
 
 #endif
