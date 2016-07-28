@@ -23,10 +23,11 @@ int main(int argc, char* argv[])
 	{
 		// Input Filename
 		//strcpy(Filename, "LINDEP.mps");
+		strcpy(Filename, "LINDEPS.mps");
 		//strcpy(Filename, "QAP15.SIF");
 		//strcpy(Filename, "BRANDY.SIF");
 		//strcpy(Filename, "sparse2000");
-		strcpy(Filename, "afiro.mps");
+		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example.mps");
 	}
 	else
@@ -56,6 +57,8 @@ int main(int argc, char* argv[])
 		Report_Solution();
 		return 0;
 	}
+
+	MPS_PrintMatrix(); // Debug only
 
 	Tm = GetTime();
 	CheckError(HSD_Main(), "Homogeneous and Self-Dual Numerical Solving Failed!");

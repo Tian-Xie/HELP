@@ -110,21 +110,44 @@ void Presolve_Init()
 		Presolve_Col_Sort(j);
 }
 
+void Presolve_DEBUG()
+{
+	int cnt1 = 0, cnt2 = 0, cnt3 = 0, cnt4 = 0;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		if (Row_Disable[i])
+			continue;
+		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+			cnt1 ++;
+		cnt3 += Row_Element_Count[i];
+	}
+	for (int i = 0; i < n_Col; i ++)
+	{
+		if (Col_Disable[i])
+			continue;
+		for (int p = V_Matrix_Col_Head[i]; p != -1; p = V_Matrix_Col_Next[p])
+			cnt2 ++;
+		cnt4 += Col_Element_Count[i];
+	}
+	printf("cnt1 = %d, cnt2 = %d, cnt3 = %d, cnt4 = %d\n", cnt1, cnt2, cnt3, cnt4);
+}
+
 void Presolve_Delete_Row(int i)
 {
 	for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
 	{
 		if (V_Matrix_Col_Prev[p] != -1)
 			V_Matrix_Col_Next[V_Matrix_Col_Prev[p]] = V_Matrix_Col_Next[p];
+		else
+			V_Matrix_Col_Head[V_Matrix_Col[p]] = V_Matrix_Col_Next[p];
 		if (V_Matrix_Col_Next[p] != -1)
 			V_Matrix_Col_Prev[V_Matrix_Col_Next[p]] = V_Matrix_Col_Prev[p];
 		Col_Element_Count[V_Matrix_Col[p]] --;
 		Col_1Norm[V_Matrix_Col[p]] -= fabs(V_Matrix_Value[p]);
-		if (Col_Element_Count[V_Matrix_Col[p]] == 0)
-			V_Matrix_Col_Head[V_Matrix_Col[p]] = -1;
 	}
 	V_Matrix_Row_Head[i] = -1;
 	Row_Element_Count[i] = 0; // Delete the whole row, but not disabled. 
+	Presolve_Modified ++;
 }
 
 void Presolve_Delete_Col(int i)
@@ -133,15 +156,16 @@ void Presolve_Delete_Col(int i)
 	{
 		if (V_Matrix_Row_Prev[p] != -1)
 			V_Matrix_Row_Next[V_Matrix_Row_Prev[p]] = V_Matrix_Row_Next[p];
+		else
+			V_Matrix_Row_Head[V_Matrix_Row[p]] = V_Matrix_Row_Next[p];
 		if (V_Matrix_Row_Next[p] != -1)
 			V_Matrix_Row_Prev[V_Matrix_Row_Next[p]] = V_Matrix_Row_Prev[p];
 		Row_Element_Count[V_Matrix_Row[p]] --;
 		Row_1Norm[V_Matrix_Row[p]] -= fabs(V_Matrix_Value[p]);
-		if (Row_Element_Count[V_Matrix_Row[p]] == 0)
-			V_Matrix_Row_Head[V_Matrix_Row[p]] = -1;
 	}
 	V_Matrix_Col_Head[i] = -1;
 	Col_Element_Count[i] = 0; // Delete the whole column, but not disabled. 
+	Presolve_Modified ++;
 }
 
 // Fix x_j = Val. Essentially set x_j = 0 and then linear transformation.
@@ -160,7 +184,7 @@ void Presolve_Fix_Variable(int j, double Val)
 	Presolve_Delete_Col(j);
 	Col_Disable[j] = 1;
 
-	Presolve_Modified = 1;
+	Presolve_Modified ++;
 }
 
 void Presolve_Set_Variable_LB(int j, double lb)
@@ -180,7 +204,7 @@ void Presolve_Set_Variable_LB(int j, double lb)
 		V_UB[j] -= V_LB[j];
 	V_LB[j] = 0.0;
 
-	Presolve_Modified = 1;
+	Presolve_Modified ++;
 }
 
 int Presolve_Simple_Col_Check()
@@ -535,7 +559,7 @@ int Presolve_Doubleton_Row_Singleton_Col()
 			if (k != j)
 				break;
 		}
-		double a_ik = V_Matrix_Value[k];
+		double a_ik = V_Matrix_Value[p];
 		if (fabs(a_ij) < Input_Tolerance || fabs(a_ik) < Input_Tolerance)
 		{
 			LP_Status = LP_STATUS_OVERFLOW;
@@ -1157,7 +1181,7 @@ void Presolve_FinalizeModel()
 int Presolve_Main()
 {
 	Presolve_Init();
-	
+
 	if (PRESOLVE_LINDEP) // Check Linear Dependent Rows
 	{
 		Presolve_Linear_Dependent_Main();
@@ -1167,7 +1191,7 @@ int Presolve_Main()
 			if (Row_Disable[i])
 				Presolve_Delete_Row(i);
 	}
-	
+
 	int Loop_Count = 0;
 	do
 	{

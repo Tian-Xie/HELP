@@ -55,7 +55,7 @@ extern char Enabled_BOUNDS[];
 // Local PC
 const int MAX_ROWS = 100000;
 const int MAX_COLS = 100000;
-const int MAX_ELEMENTS = 10000000;
+const int MAX_ELEMENTS = 1000000;
 #else
 // Server
 const int MAX_ROWS = 1000000;
@@ -70,7 +70,7 @@ const double MaxFinite = 0.99995 * MaxPositive;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
 const int PRESOLVE_LINDEP = 1;
-const int PRESOLVE_LEVEL = 5;
+const int PRESOLVE_LEVEL = 1;
 const int PRESOLVE_LOOP = 5;
 
 // Problem Status

@@ -798,6 +798,12 @@ printf("Into Iteration: Iter = %d\n", Iter);
 
 int HSD_Main()
 {
+	if (n_Row == 0 || n_Col == 0)
+	{
+		printf("No HSD Optimization is required.\n");
+		return 0;
+	}
+
 	LinearEquation_Construct();
 	
 	HSD_Solving();
