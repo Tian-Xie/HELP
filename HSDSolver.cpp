@@ -99,6 +99,8 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 	// r_d = - c * tau + A^T * y + z; note that r_d is actually -r_d in Section 4!
 	for (int i = 0; i < n_LB; i ++)
 		r_d[i] = HSD_z[i] - V_Cost[i] * HSD_tau;
+    for (int i = 0; i < n_UB; i ++)
+		r_d[i] += HSD_yu[i];
 	for (int i = 0; i < n_FR; i ++)
 		r_d[n_LB + i] = -V_Cost[n_LB + i] * HSD_tau;
 	for (int i = n_LB + n_FR; i < n_Col; i ++) // Anything Fixed ???
