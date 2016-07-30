@@ -314,7 +314,7 @@ int Presolve_Singleton_Row()
 		int p = V_Matrix_Row_Head[i];
 		int j = V_Matrix_Col[p];
 		double a_ij = V_Matrix_Value[p];
-		int b_i = V_RHS[i];
+		double b_i = V_RHS[i];
 		double x_j = b_i / a_ij;
 		if (x_j < V_LB[j] || x_j > V_UB[j])
 		{
@@ -443,8 +443,8 @@ int Presolve_Dominated_Row()
 			LP_Status = LP_STATUS_OVERFLOW;
 			return 0;
 		}
-		double min_j = V_RHS[i]; // min_i: lower bound of x_j by the bounds of other variables in row i
-		double max_j = V_RHS[i]; // max_i: upper bound of x_j by the bounds of other variables in row i
+		double min_j = V_RHS[i]; // min_j: lower bound of x_j by the bounds of other variables in row i
+		double max_j = V_RHS[i]; // max_j: upper bound of x_j by the bounds of other variables in row i
 		for (p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
 		{
 			int k = V_Matrix_Col[p];
@@ -574,18 +574,20 @@ int Presolve_Doubleton_Row_Singleton_Col()
 		if (a_ij * a_ik > 0)
 		{
 			max_k = (V_LB[j] < -MaxFinite) ? MaxPositive : ((V_RHS[i] - a_ij * V_LB[j]) / a_ik);
-			min_k = ((V_UB[j] > MaxFinite)) ? -MaxPositive : ((V_RHS[i] - a_ij * V_UB[j]) / a_ik);
+			min_k = (V_UB[j] > MaxFinite) ? -MaxPositive : ((V_RHS[i] - a_ij * V_UB[j]) / a_ik);
 		}
 		else
 		{
 			min_k = (V_LB[j] < -MaxFinite) ? -MaxPositive : ((V_RHS[i] - a_ij * V_LB[j]) / a_ik);
 			max_k = (V_UB[j] > MaxFinite) ? MaxPositive : ((V_RHS[i] - a_ij * V_UB[j]) / a_ik);
 		}
+		printf("j = %d, max_k = %e, min_k = %e\n", j, max_k, min_k);
+
 		// Update the original bound
 		V_UB[k] = min(max_k, V_UB[k]);
 		if (V_LB[k] < min_k)
 			Presolve_Set_Variable_LB(k, min_k);
-		if (V_LB[j] > V_UB[j])
+		if (V_LB[k] > V_UB[k])
 		{
 			LP_Status = LP_STATUS_PRIMAL_INFEASIBLE;
 			return 0;

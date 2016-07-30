@@ -24,12 +24,13 @@ int main(int argc, char* argv[])
 		// Input Filename
 		//strcpy(Filename, "LINDEP.mps");
 		//strcpy(Filename, "LINDEPS.mps");
-		strcpy(Filename, "QAP15.SIF");
+		//strcpy(Filename, "QAP15.SIF");
 		//strcpy(Filename, "BRANDY.SIF");
 		//strcpy(Filename, "sparse2000");
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
+		strcpy(Filename, "D:\\NETLIB\\25FV47.SIF");
 	}
 	else
 		strcpy(Filename, argv[1]);
