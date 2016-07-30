@@ -1178,6 +1178,24 @@ void Presolve_FinalizeModel()
 	printf("After Presolving, n_Row = %d, n_Col = %d, n_Element = %d\n", n_Row, n_Col, nnz);
 }
 
+void Presolve_Recount_Delete_Disabled()
+{
+	for (int i = 0; i < n_Row; i ++)
+		Row_Element_Count[i] = 0;
+	for (int j = 0; j < n_Col; j ++)
+		Col_Element_Count[j] = 0;
+	for (int j = 0; j < n_Col; j ++)
+		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
+		{
+			int i = V_Matrix_Row[p];
+			Row_Element_Count[i] ++;
+			Col_Element_Count[j] ++;
+		}
+	for (int i = 0; i < n_Row; i ++)
+		if (Row_Disable[i])
+			Presolve_Delete_Row(i);
+}
+
 int Presolve_Main()
 {
 	Presolve_Init();
@@ -1187,9 +1205,7 @@ int Presolve_Main()
 		Presolve_Linear_Dependent_Main();
 		if (LP_Status != LP_STATUS_OK)
 			return 0;
-		for (int i = 0; i < n_Row; i ++)
-			if (Row_Disable[i])
-				Presolve_Delete_Row(i);
+		Presolve_Recount_Delete_Disabled();
 	}
 
 	int Loop_Count = 0;

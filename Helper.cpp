@@ -80,7 +80,7 @@ void SetScaledVector(int n, double alpha, double* src, double* dest) // dest = a
 // Transpose = 0: dest = dest + Sign * A * v
 // Transpose = 1: dest = dest + Sign * A^T * v
 // Sign \in {1, -1}
-void SetATimesVector(int Transpose, int Sign, double* v, double* dest) 
+void SetATimesVector(int Transpose, int Sign, double* v, double* dest)
 {
 	if (! Transpose) // A * v
 	{
@@ -122,6 +122,58 @@ void SetATimesVector(int Transpose, int Sign, double* v, double* dest)
 				double destCol = dest[Col];
 				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
 					destCol -= V_Matrix_Value[j] * v[V_Matrix_Row[j]];
+				dest[Col] = destCol;
+			}
+		}
+	}
+}
+
+void SetATimesVector(int Transpose, int Sign, double* v, double* dest, int* Row_Reorder)
+{
+	if (! Transpose) // A * v
+	{
+		if (Sign == 1)
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double vCol = v[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					if (Row_Reorder[V_Matrix_Row[j]] != -1)
+						dest[Row_Reorder[V_Matrix_Row[j]]] += V_Matrix_Value[j] * vCol;
+			}
+		}
+		else
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double vCol = v[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					if (Row_Reorder[V_Matrix_Row[j]] != -1)
+						dest[Row_Reorder[V_Matrix_Row[j]]] -= V_Matrix_Value[j] * vCol;
+			}
+		}
+	}
+	else // A^T * v
+	{
+		if (Sign == 1)
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double destCol = dest[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					if (Row_Reorder[V_Matrix_Row[j]] != -1)
+						destCol += V_Matrix_Value[j] * v[Row_Reorder[V_Matrix_Row[j]]];
+				dest[Col] = destCol;
+			}
+		}
+		else
+		{
+			for (int Col = 0; Col < n_Col; Col ++)
+			{
+				double destCol = dest[Col];
+				for (int j = V_Matrix_Col_Head[Col]; j != -1; j = V_Matrix_Col_Next[j])
+					if (Row_Reorder[V_Matrix_Row[j]] != -1)
+						destCol -= V_Matrix_Value[j] * v[Row_Reorder[V_Matrix_Row[j]]];
 				dest[Col] = destCol;
 			}
 		}

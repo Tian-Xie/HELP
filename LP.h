@@ -142,6 +142,7 @@ double GetTime();
 double DotProduct(int n, double* a, double* b);
 void SetScaledVector(int n, double alpha, double* src, double* dest); // dest = alpha * src
 void SetATimesVector(int Transpose, int Sign, double* v, double* dest);
+void SetATimesVector(int Transpose, int Sign, double* v, double* dest, int* Row_Reorder);
 void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol);
 void ADAt_Allocate(int* nnzADAt, double** p_csrVal, int* csrRow, int** p_csrCol, int* LinkerTocsrAt, int* csrRowAt, int* csrColAt);
 void ADAt_Calc(double* d, double* csrVal, int* csrRow, int* csrCol);

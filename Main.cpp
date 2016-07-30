@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "sparse2000");
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example3.mps");
-		//strcpy(Filename, "example2.mps");
+		//strcpy(Filename, "example.mps");
 	}
 	else
 		strcpy(Filename, argv[1]);
