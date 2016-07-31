@@ -30,7 +30,9 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
-		strcpy(Filename, "D:\\NETLIB\\25FV47.SIF");
+		strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
+		//strcpy(Filename, "D:\\NETLIB\\ADLITTLE.SIF");
+		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.SIF");
 	}
 	else
 		strcpy(Filename, argv[1]);

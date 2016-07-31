@@ -16,7 +16,7 @@
 
 int CRUSH_Main()
 {
-	printf("CRUSHING BEGIN\n");
+	printf("Crushing BEGIN\n");
 	V_Cost_Intercept = 0.0;
 
 	// 1. Standardize Variable Bounds. If x[i] is not free, adjust to 0 <= x[i] <= u[i].
@@ -98,6 +98,6 @@ int CRUSH_Main()
 		n_Element ++;
 	}
 	printf("    After Crushing, %d Rows, %d Columns, %d Elements.\n", n_Row, n_Col, n_Element);
-	printf("CRUSHING END\n");
+	printf("Crushing END\n");
 	return 0;
 }

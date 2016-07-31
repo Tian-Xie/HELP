@@ -100,6 +100,11 @@ void Presolve_Linear_Dependent_Init()
 
 int Presolve_InitBase_Order[MAX_ROWS];
 
+bool Presolve_InitBase_Order_Cmp(const int& i, const int& j)
+{
+	return Row_Element_Count[Presolve_LD_Reduced_NewToOld[Presolve_InitBase_Order[i]]] > Row_Element_Count[Presolve_LD_Reduced_NewToOld[Presolve_InitBase_Order[j]]];
+}
+
 void Presolve_Linear_Dependent_FindInitBase()
 {
 	for (int j = 0; j < n_Col; j ++)
@@ -110,10 +115,7 @@ void Presolve_Linear_Dependent_FindInitBase()
 	// Maintain row density, from high to low
 	for (int i = 0; i < n_Row_Reduced; i ++)
 		Presolve_InitBase_Order[i] = i;
-	for (int i = 0; i < n_Row_Reduced; i ++)
-		for (int j = 0; j < n_Row_Reduced; j ++)
-			if (Row_Element_Count[Presolve_LD_Reduced_NewToOld[Presolve_InitBase_Order[i]]] > Row_Element_Count[Presolve_LD_Reduced_NewToOld[Presolve_InitBase_Order[j]]])
-				swap(Presolve_InitBase_Order[i], Presolve_InitBase_Order[j]);
+	sort(Presolve_InitBase_Order, Presolve_InitBase_Order + n_Row_Reduced);
 
 	int Init_Structured_Cols = 0, Init_Artificial_Cols = 0;
 	// Note that Presolve_LD_Out is contaminated after the following code, use Presolve_LD_Reduced_OldToNew instead!
@@ -309,7 +311,6 @@ void Presolve_Linear_Dependent_Solve()
 			}
 		}
 	}
-	printf("    %d Linearly Dependent Row(s) Detected.\n", Count_LDP);
 }
 
 void Presolve_Linear_Dependent_Main()
@@ -320,6 +321,7 @@ void Presolve_Linear_Dependent_Main()
 	if (n_Row_Reduced == 0)
 	{
 		printf("    Empty LU.\n");
+		printf("    %d Linearly Dependent Row(s) Detected.\n", Count_LDP);
 		return;
 	}
 	Presolve_Linear_Dependent_FindInitBase();
@@ -327,4 +329,5 @@ void Presolve_Linear_Dependent_Main()
 	Presolve_Linear_Dependent_Renew_LU();
 	Presolve_Linear_Dependent_Solve();
 	Presolve_Linear_Dependent_Destruct();
+	printf("    %d Linearly Dependent Row(s) Detected.\n", Count_LDP);
 }

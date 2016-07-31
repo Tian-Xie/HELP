@@ -15,6 +15,8 @@
 // This program is mainly based on: 
 // Erling D. Andersen and Knud D. Andersen, Presolving in linear programming, Mathematical Programming 71 (1995) 221-245.
 
+// Make each operation atomic!
+
 #include "LP.h"
 #include "Presolve.h"
 
@@ -132,6 +134,22 @@ void Presolve_DEBUG()
 	printf("cnt1 = %d, cnt2 = %d, cnt3 = %d, cnt4 = %d\n", cnt1, cnt2, cnt3, cnt4);
 }
 
+void Presolve_DEBUG_PrintRow(int i)
+{
+	int First = 1;
+	for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+	{
+		if (First)
+			First = 0;
+		else
+			printf(" + ");
+		printf("%lf x[%d]", V_Matrix_Value[p], V_Matrix_Col[p]);
+	}
+	printf(" = %lf\n", V_RHS[i]);
+	for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+		printf("x[%d]: [%e, %e]\n", V_Matrix_Col[p], V_LB[V_Matrix_Col[p]], V_UB[V_Matrix_Col[p]]);
+}
+
 void Presolve_Delete_Row(int i)
 {
 	for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
@@ -150,9 +168,9 @@ void Presolve_Delete_Row(int i)
 	Presolve_Modified ++;
 }
 
-void Presolve_Delete_Col(int i)
+void Presolve_Delete_Col(int j)
 {
-	for (int p = V_Matrix_Col_Head[i]; p != -1; p = V_Matrix_Col_Next[p])
+	for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 	{
 		if (V_Matrix_Row_Prev[p] != -1)
 			V_Matrix_Row_Next[V_Matrix_Row_Prev[p]] = V_Matrix_Row_Next[p];
@@ -163,8 +181,28 @@ void Presolve_Delete_Col(int i)
 		Row_Element_Count[V_Matrix_Row[p]] --;
 		Row_1Norm[V_Matrix_Row[p]] -= fabs(V_Matrix_Value[p]);
 	}
-	V_Matrix_Col_Head[i] = -1;
-	Col_Element_Count[i] = 0; // Delete the whole column, but not disabled. 
+	V_Matrix_Col_Head[j] = -1;
+	Col_Element_Count[j] = 0; // Delete the whole column, but not disabled. 
+	Presolve_Modified ++;
+}
+
+void Presolve_Delete_Col_Without_Row_i(int j, int i)
+{
+	for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
+	{
+		if (V_Matrix_Row[p] == i)
+			continue;
+		if (V_Matrix_Row_Prev[p] != -1)
+			V_Matrix_Row_Next[V_Matrix_Row_Prev[p]] = V_Matrix_Row_Next[p];
+		else
+			V_Matrix_Row_Head[V_Matrix_Row[p]] = V_Matrix_Row_Next[p];
+		if (V_Matrix_Row_Next[p] != -1)
+			V_Matrix_Row_Prev[V_Matrix_Row_Next[p]] = V_Matrix_Row_Prev[p];
+		Row_Element_Count[V_Matrix_Row[p]] --;
+		Row_1Norm[V_Matrix_Row[p]] -= fabs(V_Matrix_Value[p]);
+	}
+	V_Matrix_Col_Head[j] = -1;
+	Col_Element_Count[j] = 0; // Delete the whole column, but not disabled. 
 	Presolve_Modified ++;
 }
 
@@ -193,11 +231,11 @@ void Presolve_Set_Variable_LB(int j, double lb)
 		return;
 	// Set x_j >= lb, like crushing
 	// If x_j is currently free, set (x_j - lb) >= 0; otherwise x_j >= 0, also set (x_j - lb) >= 0
-	V_Crushing_Add[j] = lb * V_Crushing_Times[j];
+	V_Crushing_Add[j] += V_Crushing_Times[j] * lb;
 	for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 	{
 		int i = V_Matrix_Row[p];
-		V_RHS[i] -= V_Matrix_Value[i] * lb;
+		V_RHS[i] -= V_Matrix_Value[p] * lb;
 	}
 	V_Cost_Intercept += V_Cost[j] * lb;
 	if (V_UB[j] <= MaxFinite)
@@ -333,6 +371,7 @@ int Presolve_Singleton_Row()
 		Presolve_Fix_Variable(j, x_j);
 		Presolve_Delete_Row(i);
 		Row_Disable[i] = 1;
+		//printf("Singleton Row Found: Row %d, Col %d\n", i, j);
 		if (i == Presolve_Linked_List_Tail)
 			break;
 	}
@@ -523,6 +562,8 @@ int Presolve_Dominated_Row()
 			V_Presolve_Linear_Replace[j] = V_Matrix_Row_Head[i]; // Finally recover x_j by a linear relation
 			Presolve_Delete_Row(i);
 			Row_Disable[i] = 1;
+			Presolve_Delete_Col_Without_Row_i(j, i);
+			Col_Disable[j] = 1;
 		}
 		else
 		{
@@ -581,7 +622,9 @@ int Presolve_Doubleton_Row_Singleton_Col()
 			min_k = (V_LB[j] < -MaxFinite) ? -MaxPositive : ((V_RHS[i] - a_ij * V_LB[j]) / a_ik);
 			max_k = (V_UB[j] > MaxFinite) ? MaxPositive : ((V_RHS[i] - a_ij * V_UB[j]) / a_ik);
 		}
-		printf("j = %d, max_k = %e, min_k = %e\n", j, max_k, min_k);
+		//printf("j = %d, max_k = %e, min_k = %e\n", j, max_k, min_k);
+		//printf("Doubleton Row %d With Singleton Column %d\n", i, j);
+		//Presolve_DEBUG_PrintRow(i);
 
 		// Update the original bound
 		V_UB[k] = min(max_k, V_UB[k]);
@@ -601,6 +644,8 @@ int Presolve_Doubleton_Row_Singleton_Col()
 		V_Presolve_Linear_Replace[j] = V_Matrix_Row_Head[i]; // Finally recover x_j by a linear relation
 		Presolve_Delete_Row(i);
 		Row_Disable[i] = 1;
+		Presolve_Delete_Col_Without_Row_i(j, i);
+		Col_Disable[j] = 1;
 	}
 	return 1;
 }
@@ -1177,7 +1222,7 @@ void Presolve_FinalizeModel()
 	int nnz = 0;
 	for (int j = 0; j < n_Col; j ++)
 		nnz += Col_Element_Count[j];
-	printf("After Presolving, n_Row = %d, n_Col = %d, n_Element = %d\n", n_Row, n_Col, nnz);
+	printf("    After Presolving, n_Row = %d, n_Col = %d, n_Element = %d\n", n_Row, n_Col, nnz);
 }
 
 void Presolve_Recount_Delete_Disabled()
@@ -1200,6 +1245,8 @@ void Presolve_Recount_Delete_Disabled()
 
 int Presolve_Main()
 {
+	printf("Presolving BEGIN\n");
+
 	Presolve_Init();
 
 	if (PRESOLVE_LINDEP) // Check Linear Dependent Rows
@@ -1217,19 +1264,19 @@ int Presolve_Main()
 		Presolve_Modified = 0;
 		if (PRESOLVE_LEVEL >= 1)
 		{
-			Presolve_Simple_Col_Check();
+			//Presolve_Simple_Col_Check();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			Presolve_Null_Row();
+			//Presolve_Null_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
 			Presolve_Singleton_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			Presolve_Forcing_Row();
+			//Presolve_Forcing_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			Presolve_Dominated_Row();
+			//Presolve_Dominated_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
 			Presolve_Doubleton_Row_Singleton_Col();
@@ -1262,5 +1309,7 @@ int Presolve_Main()
 		return 0;
 	
 	Presolve_FinalizeModel();
+
+	printf("Presolving END\n");
 	return 0;
 }
