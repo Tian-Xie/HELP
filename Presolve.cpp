@@ -350,6 +350,8 @@ int Presolve_Singleton_Row()
 	for (int i = Presolve_Linked_List_Head; ; i = Presolve_Linked_List_Next[i])
 	{
 		int p = V_Matrix_Row_Head[i];
+		if (p == -1) // For any empty rows
+			continue;
 		int j = V_Matrix_Col[p];
 		double a_ij = V_Matrix_Value[p];
 		double b_i = V_RHS[i];
@@ -1264,19 +1266,19 @@ int Presolve_Main()
 		Presolve_Modified = 0;
 		if (PRESOLVE_LEVEL >= 1)
 		{
-			//Presolve_Simple_Col_Check();
+			Presolve_Simple_Col_Check();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			//Presolve_Null_Row();
+			Presolve_Null_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
 			Presolve_Singleton_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			//Presolve_Forcing_Row();
+			Presolve_Forcing_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
-			//Presolve_Dominated_Row();
+			Presolve_Dominated_Row();
 			if (LP_Status != LP_STATUS_OK)
 				return 0;
 			Presolve_Doubleton_Row_Singleton_Col();

@@ -18,6 +18,9 @@ int main(int argc, char* argv[])
 {
 	CheckError(Prog_Init(), "Initialization Failed!");
 	
+	char Buf[100];
+	//scanf("%s", Buf);
+
 	// Filename
 	if (argc == 1)
 	{
@@ -30,9 +33,9 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
-		strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
-		//strcpy(Filename, "D:\\NETLIB\\ADLITTLE.SIF");
-		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.SIF");
+		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
+		strcpy(Filename, "D:\\NETLIB\\CYCLE.MPS");
+		//printf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
 	}
 	else
 		strcpy(Filename, argv[1]);
