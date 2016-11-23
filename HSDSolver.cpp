@@ -139,6 +139,14 @@ void HSD_Calc_Newton_Parameters(double* D, double* D_u, double& D_g, double* r_p
 	HSD_dual_infeas = sqrt(HSD_rd_norm2_sq) / (HSD_tau + sqrt(DotProduct(n_LB, HSD_z, HSD_z) + DotProduct(n_UB, HSD_zu, HSD_zu) + DotProduct(n_UB, HSD_yu, HSD_yu) + DotProduct(n_Row, HSD_y, HSD_y)));
 	// Infe = (tau / kappa) / (tau0 / kappa0)
 	HSD_infe = HSD_tau / (HSD_kappa * HSD_inf0);
+
+	/*
+	for (int i = 0; i < n_Row; i ++)
+		printf("r_p[%d] = %lf\n", i, HSD_r_p[Row_OldToNew[i]]);
+	for (int i = 0; i < n_Col; i ++)
+		printf("r_d[%d] = %lf\n", i, HSD_r_d[Col_OldToNew[i]]);
+	return;
+	*/
 }
 
 double HSD_SLE_RHS1[MAX_COLS], HSD_SLE_RHS2[MAX_ROWS];

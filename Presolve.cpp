@@ -1306,7 +1306,8 @@ int Presolve_Main()
 	}
 	while (Presolve_Modified && Loop_Count < PRESOLVE_LOOP);
 
-	Presolve_Null_Row();
+	if (PRESOLVE_LEVEL >= 1)
+		Presolve_Null_Row();
 	if (LP_Status != LP_STATUS_OK)
 		return 0;
 	

@@ -33,9 +33,9 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "afiro.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
-		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
-		strcpy(Filename, "D:\\NETLIB\\CYCLE.MPS");
-		//printf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
+		strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
+		//strcpy(Filename, "D:\\NETLIB\\BOEING2.MPS");
+		//sprintf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
 	}
 	else
 		strcpy(Filename, argv[1]);

@@ -46,6 +46,8 @@ int LinearEquation_Construct()
 	// https://software.intel.com/zh-cn/node/470296#0EADD82B-06F8-4262-8C98-02775C054ABE
 
 #ifdef PRINT_DEBUG
+	printf("n_Row = %d;\n", n_Row);
+	printf("n_Col = %d;\n", n_Col);
 	printf("A = zeros(%d, %d);\n", n_Row, n_Col);
 	for (int j = 0; j < n_Col; j ++)
 		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
@@ -221,6 +223,10 @@ void RenewLinearEquation(double* d) // d should be inversed
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2)
 {
 #ifdef PRINT_DEBUG
+	printf("D = zeros(%d, 1);\n", n_Col);
+	for (int i = 0; i < n_Col; i ++)
+		printf("D(%d) = %.6lf;\n", i + 1, d[i]);
+	printf("D = zeros(, 1);\n", n_Col);
 	printf("b_1 = zeros(%d, 1);\n", n_Col);
 	for (int i = 0; i < n_Col; i ++)
 		printf("b_1(%d) = %.6lf;\n", i + 1, b_1[i]);
