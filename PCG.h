@@ -14,11 +14,22 @@
 
 #ifndef _PCG_H
 
-const double prec_threshold = 1e-10;
+#include "LP.h"
+
+const double PREC_THRESHOLD = 1e-10;
+const int PART_CHOL_COLS = 3;
+const int MAX_PART_CHOL_COLS = 100;
+
+extern double PARTIAL_GR[MAX_ROWS][MAX_PART_CHOL_COLS];
+extern double PARTIAL_CHOL_L[MAX_ROWS][MAX_PART_CHOL_COLS];
+extern double PARTIAL_CHOL_D[MAX_ROWS];
+extern int PARTIAL_CHOL_PERM[MAX_ROWS];
+
+void UnitTest();
 
 void Preconditioner(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* d, double* r, double* Ret);
 
-void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* d, double* b, double* x, 
-					   double* tmp_col, double* r, double* z, double* p, double* q);
+void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* csrValA, int* csrColIndA, int* csrRowPtrA, 
+					   double* d, double* b, double* x, double* tmp_col, double* r, double* z, double* p, double* q);
 
 #endif

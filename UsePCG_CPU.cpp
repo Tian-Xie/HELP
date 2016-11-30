@@ -18,6 +18,7 @@
 
 int nnzA; 
 double *csrValAt; int csrRowPtrAt[MAX_COLS + 1]; int *csrColIndAt;
+double *csrValA; int csrRowPtrA[MAX_ROWS + 1]; int *csrColIndA;
 
 double tmp_row[MAX_ROWS], tmp_col[MAX_COLS];
 double X1[MAX_COLS], X2[MAX_ROWS];
@@ -32,13 +33,15 @@ int LinearEquation_Construct()
 			nnzA ++;
 	csrValAt = (double*) malloc(sizeof(double) * nnzA);
 	csrColIndAt = (int*) malloc(sizeof(double) * nnzA);
+	csrValA = (double*) malloc(sizeof(double) * nnzA);
+	csrColIndA = (int*) malloc(sizeof(double) * nnzA);
 
 	// Construct matrix At in CSR format. 
 	// After Presolve_Init(), we can assume A is sorted.
 	nnzA = 0;
 	for (int j = 0; j < n_Col; j ++)
 	{
-		csrRowPtrAt[j] = nnzA + 1; // One-based
+		csrRowPtrAt[j] = nnzA;
 		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 		{
 			csrValAt[nnzA] = V_Matrix_Value[p];
@@ -46,7 +49,21 @@ int LinearEquation_Construct()
 			nnzA ++;
 		}
 	}
-	csrRowPtrAt[n_Col] = nnzA + 1;
+	csrRowPtrAt[n_Col] = nnzA;
+
+	// Construct matrix A in CSR format. 
+	nnzA = 0;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		csrRowPtrA[i] = nnzA;
+		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
+		{
+			csrValA[nnzA] = V_Matrix_Value[p];
+			csrColIndA[nnzA] = V_Matrix_Col[p] + 1; // One-based
+			nnzA ++;
+		}
+	}
+	csrRowPtrA[n_Row] = nnzA;
 	return 0;
 }
 
@@ -80,8 +97,6 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	for (int i = 0; i < n_Row; i ++)
 		printf("b_2(%d) = %.6lf;\n", i + 1, b_2[i]);
 #endif
-	for (int i = 0; i < n_Col; i ++)
-		dinv[i] = 1.0 / d[i];
 	for (int i = 0; i < n_Row; i ++)
 		tmp_row[i] = -b_2[i];
 	// D^(-1) b_1
@@ -133,7 +148,7 @@ printf("%%Before Solve\n");
 	fclose(out);
 */
 
-	ConjugateGradient(n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, dinv, tmp_row, X2, 
+	ConjugateGradient(n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, csrValA, csrColIndA, csrRowPtrA, d, tmp_row, X2, 
 		CG_WorkVar, CG_WorkVar + n_Col, CG_WorkVar + n_Col + n_Row, CG_WorkVar + n_Col + n_Row * 2, CG_WorkVar + n_Col + n_Row * 3);
 
 #ifdef DEBUG_TRACK

@@ -13,9 +13,13 @@
  ******************************************************************************/
 
 #include "LP.h"
+#include "PCG.h"
 
 int main(int argc, char* argv[])
 {
+	UnitTest();
+	return 0;
+
 	CheckError(Prog_Init(), "Initialization Failed!");
 	
 	char Buf[100];
@@ -30,10 +34,10 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "QAP15.SIF");
 		//strcpy(Filename, "BRANDY.SIF");
 		//strcpy(Filename, "sparse2000");
-		//strcpy(Filename, "afiro.mps");
+		strcpy(Filename, "D:\\NETLIB\\afiro.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
-		strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
+		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
 		//strcpy(Filename, "D:\\NETLIB\\BOEING2.MPS");
 		//sprintf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
 	}
