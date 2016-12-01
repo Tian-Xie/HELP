@@ -45,7 +45,7 @@ int LinearEquation_Construct()
 		for (int p = V_Matrix_Col_Head[j]; p != -1; p = V_Matrix_Col_Next[p])
 		{
 			csrValAt[nnzA] = V_Matrix_Value[p];
-			csrColIndAt[nnzA] = V_Matrix_Row[p] + 1; // One-based
+			csrColIndAt[nnzA] = V_Matrix_Row[p]; // One-based
 			nnzA ++;
 		}
 	}
@@ -59,7 +59,7 @@ int LinearEquation_Construct()
 		for (int p = V_Matrix_Row_Head[i]; p != -1; p = V_Matrix_Row_Next[p])
 		{
 			csrValA[nnzA] = V_Matrix_Value[p];
-			csrColIndA[nnzA] = V_Matrix_Col[p] + 1; // One-based
+			csrColIndA[nnzA] = V_Matrix_Col[p]; // One-based
 			nnzA ++;
 		}
 	}
@@ -105,7 +105,7 @@ int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double
 	// A * (D^(-1) b_1) - b_2
 	char MKL_matdescra[6] = {0};
 	MKL_matdescra[0] = 'G';
-	MKL_matdescra[3] = 'F';
+	MKL_matdescra[3] = 'C';
 	mkl_dcsrmv(&CHAR_T, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValAt, csrColIndAt, csrRowPtrAt, csrRowPtrAt + 1, tmp_col, &DOUBLE_ONE, tmp_row);
 
 	// Solve (A D^(-1) A^T) x_2 = (A D^(-1) b_1 - b_2)
@@ -148,7 +148,9 @@ printf("%%Before Solve\n");
 	fclose(out);
 */
 
-	ConjugateGradient(n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, csrValA, csrColIndA, csrRowPtrA, d, tmp_row, X2, 
+	double CG_gamma = 1e-4;
+	double CG_delta = 1e-4;
+	ConjugateGradient(CG_gamma, CG_delta, n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, csrValA, csrColIndA, csrRowPtrA, d, tmp_row, X2, 
 		CG_WorkVar, CG_WorkVar + n_Col, CG_WorkVar + n_Col + n_Row, CG_WorkVar + n_Col + n_Row * 2, CG_WorkVar + n_Col + n_Row * 3);
 
 #ifdef DEBUG_TRACK

@@ -27,6 +27,7 @@ double TEMP_SCATTER[MAX_COLS];
 
 int csrRowPtrA_BEG[MAX_ROWS], csrRowPtrA_END[MAX_ROWS];
 
+double L11[MAX_PART_CHOL_COLS][MAX_PART_CHOL_COLS];
 double L11Inv[MAX_PART_CHOL_COLS][MAX_PART_CHOL_COLS];
 double csrValPARTIAL_CHOL_INV1[MAX_ROWS * MAX_PART_CHOL_COLS + MAX_ROWS];
 int csrColIndPARTIAL_CHOL_INV1[MAX_ROWS * MAX_PART_CHOL_COLS + MAX_ROWS], csrRowPtrPARTIAL_CHOL_INV1[MAX_ROWS + 1];
@@ -41,7 +42,7 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 	{
 		DIAG_S[i] = delta;
 		for (int j = csrRowPtrA[i]; j < csrRowPtrA[i + 1]; j ++)
-			DIAG_S[i] += csrValA[j] * csrValA[j] / (d[csrColIndA[j] - 1] + gamma);
+			DIAG_S[i] += csrValA[j] * csrValA[j] / (d[csrColIndA[j]] + gamma);
 	}
 
 	// Step 2: Partial Cholesky Decomposition
@@ -62,7 +63,7 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 		// Calculate the col_max-th column of GR => TEMP_GR
 		// (1) Scatter A(col_max, :) => TEMP_SCATTER
 		for (int j = csrRowPtrA[col_max]; j < csrRowPtrA[col_max + 1]; j ++)
-			TEMP_SCATTER[csrColIndA[j] - 1] = csrValA[j] / (d[csrColIndA[j] - 1] + gamma);
+			TEMP_SCATTER[csrColIndA[j]] = csrValA[j] / (d[csrColIndA[j]] + gamma);
 		// (2) Calculate Inner Products
 		for (int i = k; i < n_Row; i ++)
 		{
@@ -70,12 +71,12 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 			// Calculate GR(ii, col_max) => TEMP_GR(ii)
 			TEMP_GR[ii] = 0;
 			for (int j = csrRowPtrA[ii]; j < csrRowPtrA[ii + 1]; j ++)
-				TEMP_GR[ii] += csrValA[j] * TEMP_SCATTER[csrColIndA[j] - 1];
+				TEMP_GR[ii] += csrValA[j] * TEMP_SCATTER[csrColIndA[j]];
 		}
 		TEMP_GR[col_max] += delta;
 		// (3) Recover TEMP_SCATTER
 		for (int j = csrRowPtrA[col_max]; j < csrRowPtrA[col_max + 1]; j ++)
-			TEMP_SCATTER[csrColIndA[j] - 1] = 0;
+			TEMP_SCATTER[csrColIndA[j]] = 0;
 
 		// Calculate Cholesky Column according to:
 		// d_k = a_{kk} - sum_{r = 1, ..., (k - 1)} u_{kr} l_{kr}
@@ -117,7 +118,10 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 	// Note that L11[i][j] = PARTIAL_CHOL_L[PCG_PERM[i]][j];
 	for (int i = 0; i < PART_CHOL_COLS; i ++)
 		for (int j = 0; j < PART_CHOL_COLS; j ++)
+		{
+			L11[i][j] = PARTIAL_CHOL_L[PCG_PERM[i]][j];
 			L11Inv[i][j] = (double) (i == j);
+		}
 	// Note that the diagonal of L_{11} is all 1!
 	for (int j = 0; j < PART_CHOL_COLS; j ++)
 		for (int i = j + 1; i < PART_CHOL_COLS; i ++)
@@ -132,7 +136,7 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 	for (int i = 0; i < PART_CHOL_COLS; i ++)
 	{
 		csrRowPtrPARTIAL_CHOL_INV1[i] = nnzINV1;
-		csrColIndPARTIAL_CHOL_INV1[nnzINV1] = i + 1; // One-based
+		csrColIndPARTIAL_CHOL_INV1[nnzINV1] = i; // Zero-based
 		csrValPARTIAL_CHOL_INV1[nnzINV1] = 1;
 		nnzINV1 ++;
 	}
@@ -141,11 +145,11 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 		csrRowPtrPARTIAL_CHOL_INV1[i] = nnzINV1;
 		for (int j = 0; j < PART_CHOL_COLS; j ++)
 		{
-			csrColIndPARTIAL_CHOL_INV1[nnzINV1] = j + 1; // One-based
-			csrValPARTIAL_CHOL_INV1[nnzINV1] = PARTIAL_CHOL_L[PCG_PERM[i]][j];
+			csrColIndPARTIAL_CHOL_INV1[nnzINV1] = j; // Zero-based
+			csrValPARTIAL_CHOL_INV1[nnzINV1] = -PARTIAL_CHOL_L[PCG_PERM[i]][j];
 			nnzINV1 ++;
 		}
-		csrColIndPARTIAL_CHOL_INV1[nnzINV1] = i + 1; // One-based
+		csrColIndPARTIAL_CHOL_INV1[nnzINV1] = i; // Zero-based
 		csrValPARTIAL_CHOL_INV1[nnzINV1] = 1;
 		nnzINV1 ++;
 	}
@@ -155,9 +159,9 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 	for (int i = 0; i < PART_CHOL_COLS; i ++)
 	{
 		csrRowPtrPARTIAL_CHOL_INV2[i] = nnzINV2;
-		for (int j = 0; j < i; j ++)
+		for (int j = 0; j <= i; j ++)
 		{
-			csrColIndPARTIAL_CHOL_INV2[nnzINV2] = j + 1; // One-based
+			csrColIndPARTIAL_CHOL_INV2[nnzINV2] = j; // Zero-based
 			csrValPARTIAL_CHOL_INV2[nnzINV2] = L11Inv[i][j];
 			nnzINV2 ++;
 		}
@@ -165,7 +169,7 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 	for (int i = PART_CHOL_COLS; i < n_Row; i ++)
 	{
 		csrRowPtrPARTIAL_CHOL_INV2[i] = nnzINV2;
-		csrColIndPARTIAL_CHOL_INV2[nnzINV2] = i + 1; // One-based
+		csrColIndPARTIAL_CHOL_INV2[nnzINV2] = i; // Zero-based
 		csrValPARTIAL_CHOL_INV2[nnzINV2] = 1;
 		nnzINV2 ++;
 	}
@@ -174,22 +178,29 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 
 // Calculate ret = M^(-1) * r
 // Note that ``n_Row'' and ``n_Col'' are A's dimension size!
-void Preconditioner(int n_Row, int n_Col, double* csrValA, int* csrColIndA, int* csrRowPtrA, double* d, double* r, double* Ret)
+double PREC_TMP1[MAX_ROWS], PREC_TMP2[MAX_ROWS];
+
+
+void Preconditioner(int n_Row, int n_Col, double* r, double* Ret)
 {
 	char MKL_matdescra[6] = {0};
 	MKL_matdescra[0] = 'G';
-	MKL_matdescra[3] = 'F';
-	cblas_dcopy(n_Row, r, 1, Ret, 1);
-	// TODO ********
-	return;
+	MKL_matdescra[3] = 'C';
+	
+	// (LDL^T)^{-1} r = Inv2^T * Inv1^T * D^{-1} * Inv1 * Inv2 * r
+	mkl_dcsrmv(&CHAR_N, &n_Row, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValPARTIAL_CHOL_INV2, csrColIndPARTIAL_CHOL_INV2, csrRowPtrPARTIAL_CHOL_INV2, csrRowPtrPARTIAL_CHOL_INV2 + 1, r, &DOUBLE_ZERO, PREC_TMP1);
+	mkl_dcsrmv(&CHAR_N, &n_Row, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValPARTIAL_CHOL_INV1, csrColIndPARTIAL_CHOL_INV1, csrRowPtrPARTIAL_CHOL_INV1, csrRowPtrPARTIAL_CHOL_INV1 + 1, PREC_TMP1, &DOUBLE_ZERO, PREC_TMP2);
+	for (int i = 0; i < n_Row; i ++)
+		PREC_TMP2[i] /= DIAG_S[PCG_PERM[i]];
+	mkl_dcsrmv(&CHAR_T, &n_Row, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValPARTIAL_CHOL_INV1, csrColIndPARTIAL_CHOL_INV1, csrRowPtrPARTIAL_CHOL_INV1, csrRowPtrPARTIAL_CHOL_INV1 + 1, PREC_TMP2, &DOUBLE_ZERO, PREC_TMP1);
+	mkl_dcsrmv(&CHAR_T, &n_Row, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValPARTIAL_CHOL_INV2, csrColIndPARTIAL_CHOL_INV2, csrRowPtrPARTIAL_CHOL_INV2, csrRowPtrPARTIAL_CHOL_INV2 + 1, PREC_TMP1, &DOUBLE_ZERO, Ret);
 }
 
 /*
-void Preconditioner(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* d, double* r, double* Ret)
+void Preconditioner(int n_Row, int n_Col, double* r, double* Ret)
 {
 	// Ret = r
 	cblas_dcopy(n_Row, r, 1, Ret, 1); // y = x
-	return;
 }
 */
 
@@ -205,12 +216,12 @@ Preconditioned Conjugate Gradient (PCG)
 
 Initialization: (k = 0)
 	x_0 (initial guess)
-	r_0 = b - (A * (D^(-1) * (A^T x_0)))
+	r_0 = (b - delta * x_0) - (A * ((D + gamma I)^(-1) * (A^T x_0)))
 	z_0 = M^(-1) r_0
 	p_0 = z_0
 
 For k >= 0, while ||r_k|| / ||r_0|| > Epsilon
-	q_k = A * (D^(-1) * (A^T * p_k))
+	q_k = delta * p_k + A * ((D + gamma I)^(-1) * (A^T * p_k))
 	alpha_k = (z_k^T r_k) / (p_k^T q_k)
 	x_{k + 1} = x_k + alpha_k * p_k
 	r_{k + 1} = r_k - alpha_k * q_k
@@ -222,45 +233,118 @@ End
 Here, M^(-1) is the preconditioner of (A D^(-1) A^T)
 */
 
-void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* csrValA, int* csrColIndA, int* csrRowPtrA, 
+double PCG_TMP_ROW[MAX_ROWS];
+
+// y = alpha * A * x + beta * y
+void CSRMV_N(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
+{
+	for (int i = 0; i < n_Row; i ++)
+		y[i] *= beta;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		double tmp = 0;
+		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
+			tmp += csrValA[j] * x[csrColIndA[j]];
+		y[i] += tmp * alpha;
+	}
+}
+
+// y = alpha * A^T * x + beta * y
+void CSRMV_T(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
+{
+	for (int i = 0; i < n_Col; i ++)
+		y[i] *= beta;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		double tmp = alpha * x[i];
+		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
+			y[csrColIndA[j]] += csrValA[j] * tmp;
+	}
+}
+
+void PCGDebugHelper(int n_Row, int n_Col, double* csrValA, int* csrColIndA, double* d, double gamma, double delta)
+{
+	// GR = A (D + gamma I)^(-1) A^T + delta I
+	FILE* O = fopen("PCGDebug.txt", "w");
+	fprintf(O, "n_Row = %d\n", n_Row);
+	fprintf(O, "n_Col = %d\n", n_Col);
+	fprintf(O, "A = zeros(n_Row, n_Col);\n"); // Reordered
+	for (int i = 0; i < n_Row; i ++)
+		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
+			fprintf(O, "A(%d, %d) = %lf;\n", i + 1, csrColIndA[j] + 1, csrValA[j]);
+	fprintf(O, "d_diag = [");
+	for (int i = 0; i < n_Col - 1; i ++)
+		fprintf(O, "%lf, ", d[i]);
+	fprintf(O, "%lf];\n", d[n_Col - 1]);
+	fprintf(O, "gamma = %lf;\n", gamma);
+	fprintf(O, "delta = %lf;\n", delta);
+	fprintf(O, "GR = A * inv(diag(d_diag) + gamma * eye(n_Col)) * A' + delta * eye(n_Row);\n");
+
+	// Partial Cholesky
+	fprintf(O, "LDL_L = eye(n_Row);\n");
+	for (int j = 0; j < PART_CHOL_COLS; j ++)
+	{
+		fprintf(O, "LDL_L(%d:%d, %d) = [", j + 1, n_Row, j + 1);
+		for (int i = j; i < n_Row - 1; i ++)
+			fprintf(O, "%lf, ", PARTIAL_CHOL_L[PCG_PERM[i]][j]);
+		fprintf(O, "%lf];\n", PARTIAL_CHOL_L[PCG_PERM[n_Row - 1]][j]);
+	}
+	fprintf(O, "LDL_D = diag([");
+	for (int i = 0; i < n_Row - 1; i ++)
+		fprintf(O, "%lf, ", DIAG_S[i]);
+	fprintf(O, "%lf]);\n", DIAG_S[n_Row - 1]);
+
+	// Inverse
+	fprintf(O, "Inv1 = zeros(n_Row, n_Row);\n");
+	for (int i = 0; i < n_Row; i ++)
+		for (int j = csrRowPtrPARTIAL_CHOL_INV1[i]; j < csrRowPtrPARTIAL_CHOL_INV1[i + 1]; j ++)
+			fprintf(O, "Inv1(%d, %d) = %lf;\n", i + 1, csrColIndPARTIAL_CHOL_INV1[j] + 1, csrValPARTIAL_CHOL_INV1[j]);
+	fprintf(O, "Inv2 = zeros(n_Row, n_Row);\n");
+	for (int i = 0; i < n_Row; i ++)
+		for (int j = csrRowPtrPARTIAL_CHOL_INV2[i]; j < csrRowPtrPARTIAL_CHOL_INV2[i + 1]; j ++)
+			fprintf(O, "Inv2(%d, %d) = %lf;\n", i + 1, csrColIndPARTIAL_CHOL_INV2[j] + 1, csrValPARTIAL_CHOL_INV2[j]);
+	fprintf(O, "Inv = Inv1 * Inv2;\n");
+	fclose(O);
+}
+
+void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* csrValA, int* csrColIndA, int* csrRowPtrA, 
 					   double* d, double* b, double* x, double* tmp_col, double* r, double* z, double* p, double* q)
 {
 	for (int i = 0; i < n_Row; i ++)
 		PCG_PERM[i] = i;
-	RenewPartialCholesky(n_Row, n_Col, csrValA, csrColIndA, csrRowPtrA, d, 1e-4, 1e-4); // Gamma and Delta need to be adjusted!
+	RenewPartialCholesky(n_Row, n_Col, csrValA, csrColIndA, csrRowPtrA, d, gamma, delta); // Gamma and Delta need to be adjusted!
+	PCGDebugHelper(n_Row, n_Col, csrValA, csrColIndA, d, gamma, delta);
 	
 	char MKL_matdescra[6] = {0};
 	MKL_matdescra[0] = 'G';
-	MKL_matdescra[3] = 'F';
+	MKL_matdescra[3] = 'C';
 
 	// x_0: Initial Guess
 	for (int i = 0; i < n_Row; i ++)
 		x[i] = 0;
 	
-	// TODO: MODIFY EQUATION ******* 
+	// r_0 = b - (A (D + gamma I)^(-1) A^T + delta I) x
+	//     = (b - delta x) - A * ((D + gamma I)^(-1) * (A^T * x))
 
-
-	// r_0 = b - (A * (D^(-1) * (A^T x))) 
 	// Step 1: tmp_col = A^T * x
-	mkl_dcsrmv(&CHAR_T, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA, csrRowPtrA + 1, x, &DOUBLE_ZERO, tmp_col);
-	// Step 2: tmp_col = D * tmp_col
+	//mkl_dcsrmv(&CHAR_T, &n_Row, &n_Col, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, x, &DOUBLE_ZERO, tmp_col);
+	CSRMV_T(n_Row, n_Col, DOUBLE_ONE, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, x, DOUBLE_ZERO, tmp_col);
+	// Step 2: tmp_col = (D + gamma I)^(-1) * tmp_col
 	for (int i = 0; i < n_Col; i ++)
-		tmp_col[i] /= d[i];
-	// Step 3: r_0 = b
+		tmp_col[i] /= d[i] + gamma;
+	// Step 3: r_0 = b - delta x
 	// A row reorder => b reorder
 	for (int i = 0; i < n_Row; i ++)
-		r[i] = b[PCG_PERM[i]];
-	// cblas_dcopy(n_Row, b, 1, r, 1); // y = x
+		r[i] = b[PCG_PERM[i]] - delta * x[i];
 	// Step 4: r_0 = r_0 - A * tmp_col
-	mkl_dcsrmv(&CHAR_N, &n_Col, &n_Row, &DOUBLE_NEGONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA, csrRowPtrA + 1, tmp_col, &DOUBLE_ONE, r);
+	//mkl_dcsrmv(&CHAR_N, &n_Row, &n_Col, &DOUBLE_NEGONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, tmp_col, &DOUBLE_ONE, r);
+	CSRMV_N(n_Row, n_Col, DOUBLE_NEGONE, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, tmp_col, DOUBLE_ONE, r);
 
 	// z_0 = M^(-1) r_0
-	Preconditioner(n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, d, r, z);
+	Preconditioner(n_Row, n_Col, r, z);
 
 	// p_0 = z_0
 	cblas_dcopy(n_Row, z, 1, p, 1); // y = x
-
-	mkl_dcsrmv(&CHAR_N, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValAt, csrColIndAt, csrRowPtrAt, csrRowPtrAt + 1, z, &DOUBLE_ZERO, tmp_col);
 
 	double terminate = cblas_dnrm2(n_Row, r, 1) * PREC_THRESHOLD;
 
@@ -273,14 +357,19 @@ void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt,
 		if (rnorm < terminate)
 			break;
 
-		// q_k = A * (D * (A^T * p_k))
+		// q_k = delta * p_k + A * ((D + gamma I)^(-1) * (A^T * p_k))
 		// Step 1: tmp_col = A^T * p_k
-		mkl_dcsrmv(&CHAR_T, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA, csrRowPtrA + 1, p, &DOUBLE_ZERO, tmp_col);
-		// Step 2: tmp_col = D^(-1) * tmp_col
+		//mkl_dcsrmv(&CHAR_T, &n_Row, &n_Col, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, p, &DOUBLE_ZERO, tmp_col);
+		CSRMV_T(n_Row, n_Col, DOUBLE_ONE, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, p, DOUBLE_ZERO, tmp_col);
+		// Step 2: tmp_col = (D + gamma I)^(-1) * tmp_col
 		for (int i = 0; i < n_Col; i ++)
-			tmp_col[i] /= d[i];
-		// Step 3: q = A * tmp_col
-		mkl_dcsrmv(&CHAR_N, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA, csrRowPtrA + 1, tmp_col, &DOUBLE_ZERO, q);
+			tmp_col[i] /= d[i] + gamma;
+		// Step 3: q_k = delta * p_k
+		for (int i = 0; i < n_Row; i ++)
+			q[i] = delta * p[i];
+		// Step 4: q = q + A * tmp_col
+		//mkl_dcsrmv(&CHAR_N, &n_Row, &n_Col, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, tmp_col, &DOUBLE_ONE, q);
+		CSRMV_N(n_Row, n_Col, DOUBLE_ONE, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, tmp_col, DOUBLE_ONE, q);
 
 		// alpha_k = (z_k^T r_k) / (p_k^T q_k)
 		double alpha_up = cblas_ddot(n_Row, z, 1, r, 1);
@@ -294,7 +383,7 @@ void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt,
 		cblas_daxpy(n_Row, -alpha, q, 1, r, 1); // y = alpha * x + y
 
 		// z_{k + 1} = M^(-1) r_{k + 1}
-		Preconditioner(n_Row, n_Col, csrValA, csrColIndA, csrRowPtrA, d, r, z);
+		Preconditioner(n_Row, n_Col, r, z);
 
 		// beta_k = (z_{k + 1}^T r_{k + 1}) / (z_k^T r_k)
 		double beta_up = cblas_ddot(n_Row, z, 1, r, 1);
@@ -306,6 +395,11 @@ void ConjugateGradient(int n_Row, int n_Col, double* csrValAt, int* csrColIndAt,
 		// Step 2: p = p + r
 		cblas_daxpy(n_Row, 1, r, 1, p, 1); // y = alpha * x + y
 	}
+
+	// Reorder x
+	for (int i = 0; i < n_Row; i ++)
+		PCG_TMP_ROW[PCG_PERM[i]] = x[i];
+	cblas_dcopy(n_Row, PCG_TMP_ROW, 1, x, 1);
 }
 
 

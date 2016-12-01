@@ -15,10 +15,30 @@
 #include "LP.h"
 #include "PCG.h"
 
+#include "MKL_Util.h"
+void MKLTest()
+{
+	// [1 0 2; 0 3 0; 4 0 5] * [3 5 7]' = [17 15 47]'
+	char MKL_matdescra[6] = {0};
+	MKL_matdescra[0] = 'G';
+	MKL_matdescra[3] = 'C';
+	int n_Col = 3;
+	int n_Row = 3;
+	double csrValA[] = {1, 2, 3, 4, 5};
+	int csrColIndA[] = {0, 2, 1, 0, 2};
+	int csrRowPtrA_BEG[] = {0, 2, 3};
+	int csrRowPtrA_END[] = {2, 3, 5};
+	double x[] = {3, 5, 7};
+	double y[3];
+	mkl_dcsrmv(&CHAR_N, &n_Col, &n_Row, &DOUBLE_ONE, MKL_matdescra, csrValA, csrColIndA, csrRowPtrA_BEG, csrRowPtrA_END, x, &DOUBLE_ZERO, y);
+	printf("%lf\n%lf\n%lf\n", y[0], y[1], y[2]);
+}
+
 int main(int argc, char* argv[])
 {
-	UnitTest();
-	return 0;
+	//MKLTest();
+	//UnitTest();
+	//return 0;
 
 	CheckError(Prog_Init(), "Initialization Failed!");
 	
