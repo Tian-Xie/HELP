@@ -53,6 +53,33 @@ double DotProduct(int n, double* a, double* b)
 	return Ret;
 }
 
+// y = alpha * A * x + beta * y
+void CSRMV_N(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
+{
+	for (int i = 0; i < n_Row; i ++)
+		y[i] *= beta;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		double tmp = 0;
+		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
+			tmp += csrValA[j] * x[csrColIndA[j]];
+		y[i] += tmp * alpha;
+	}
+}
+
+// y = alpha * A^T * x + beta * y
+void CSRMV_T(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
+{
+	for (int i = 0; i < n_Col; i ++)
+		y[i] *= beta;
+	for (int i = 0; i < n_Row; i ++)
+	{
+		double tmp = alpha * x[i];
+		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
+			y[csrColIndA[j]] += csrValA[j] * tmp;
+	}
+}
+
 void SetScaledVector(int n, double alpha, double* src, double* dest) // dest = alpha * src
 {
 	if (alpha == 1)

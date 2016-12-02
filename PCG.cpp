@@ -205,62 +205,7 @@ void Preconditioner(int n_Row, int n_Col, double* r, double* Ret)
 */
 
 /*
-Solving (A (D + gamma I)^(-1) A^T + delta I) x = b
-A: Sparse Matrix (CSR), n_Row * n_Col
-D: Diagonal, n_Col * n_Col
-b: Dense Vector, n_Row * 1
-x: Dense Vector, n_Row * 1
-M: Preconditioner
-
-Preconditioned Conjugate Gradient (PCG)
-
-Initialization: (k = 0)
-	x_0 (initial guess)
-	r_0 = (b - delta * x_0) - (A * ((D + gamma I)^(-1) * (A^T x_0)))
-	z_0 = M^(-1) r_0
-	p_0 = z_0
-
-For k >= 0, while ||r_k|| / ||r_0|| > Epsilon
-	q_k = delta * p_k + A * ((D + gamma I)^(-1) * (A^T * p_k))
-	alpha_k = (z_k^T r_k) / (p_k^T q_k)
-	x_{k + 1} = x_k + alpha_k * p_k
-	r_{k + 1} = r_k - alpha_k * q_k
-	z_{k + 1} = M^(-1) r_{k + 1}
-	beta_k = (z_{k + 1}^T r_{k + 1}) / (z_k^T r_k)
-	p_{k + 1} = r_{k + 1} + beta_k p_k
-End
-
-Here, M^(-1) is the preconditioner of (A D^(-1) A^T)
-*/
-
-double PCG_TMP_ROW[MAX_ROWS];
-
-// y = alpha * A * x + beta * y
-void CSRMV_N(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
-{
-	for (int i = 0; i < n_Row; i ++)
-		y[i] *= beta;
-	for (int i = 0; i < n_Row; i ++)
-	{
-		double tmp = 0;
-		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
-			tmp += csrValA[j] * x[csrColIndA[j]];
-		y[i] += tmp * alpha;
-	}
-}
-
-// y = alpha * A^T * x + beta * y
-void CSRMV_T(int n_Row, int n_Col, double alpha, double* csrValA, int* csrColIndA, int* csrRowPtrA_BEG, int* csrRowPtrA_END, double* x, double beta, double* y)
-{
-	for (int i = 0; i < n_Col; i ++)
-		y[i] *= beta;
-	for (int i = 0; i < n_Row; i ++)
-	{
-		double tmp = alpha * x[i];
-		for (int j = csrRowPtrA_BEG[i]; j < csrRowPtrA_END[i]; j ++)
-			y[csrColIndA[j]] += csrValA[j] * tmp;
-	}
-}
+double PCG_TMP_HELPER_IN[MAX_ROWS], PCG_TMP_HELPER_OUT[MAX_ROWS];
 
 void PCGDebugHelper(int n_Row, int n_Col, double* csrValA, int* csrColIndA, double* d, double gamma, double delta)
 {
@@ -291,8 +236,8 @@ void PCGDebugHelper(int n_Row, int n_Col, double* csrValA, int* csrColIndA, doub
 	}
 	fprintf(O, "LDL_D = diag([");
 	for (int i = 0; i < n_Row - 1; i ++)
-		fprintf(O, "%lf, ", DIAG_S[i]);
-	fprintf(O, "%lf]);\n", DIAG_S[n_Row - 1]);
+		fprintf(O, "%lf, ", DIAG_S[PCG_PERM[i]]);
+	fprintf(O, "%lf]);\n", DIAG_S[PCG_PERM[n_Row - 1]]);
 
 	// Inverse
 	fprintf(O, "Inv1 = zeros(n_Row, n_Row);\n");
@@ -304,8 +249,50 @@ void PCGDebugHelper(int n_Row, int n_Col, double* csrValA, int* csrColIndA, doub
 		for (int j = csrRowPtrPARTIAL_CHOL_INV2[i]; j < csrRowPtrPARTIAL_CHOL_INV2[i + 1]; j ++)
 			fprintf(O, "Inv2(%d, %d) = %lf;\n", i + 1, csrColIndPARTIAL_CHOL_INV2[j] + 1, csrValPARTIAL_CHOL_INV2[j]);
 	fprintf(O, "Inv = Inv1 * Inv2;\n");
+
+	// Try to apply a preconditioner
+	fprintf(O, "tmpV = (1 : n_Row)';\n");
+	for (int i = 0; i < n_Row; i ++)
+		PCG_TMP_HELPER_IN[i] = i + 1.0;
+	Preconditioner(n_Row, n_Col, PCG_TMP_HELPER_IN, PCG_TMP_HELPER_OUT);
+	fprintf(O, "trueAns = Inv2' * Inv1' * inv(LDL_D) * Inv1 * Inv2 * tmpV;\n");
+	fprintf(O, "testAns = zeros(n_Row, 1);\n");
+	for (int i = 0; i < n_Row; i ++)
+		fprintf(O, "testAns(%d) = %lf;\n", i + 1, PCG_TMP_HELPER_OUT[i]);
 	fclose(O);
 }
+*/
+
+/*
+Solving (A (D + gamma I)^(-1) A^T + delta I) x = b
+A: Sparse Matrix (CSR), n_Row * n_Col
+D: Diagonal, n_Col * n_Col
+b: Dense Vector, n_Row * 1
+x: Dense Vector, n_Row * 1
+M: Preconditioner
+
+Preconditioned Conjugate Gradient (PCG)
+
+Initialization: (k = 0)
+	x_0 (initial guess)
+	r_0 = (b - delta * x_0) - (A * ((D + gamma I)^(-1) * (A^T x_0)))
+	z_0 = M^(-1) r_0
+	p_0 = z_0
+
+For k >= 0, while ||r_k|| / ||r_0|| > Epsilon
+	q_k = delta * p_k + A * ((D + gamma I)^(-1) * (A^T * p_k))
+	alpha_k = (z_k^T r_k) / (p_k^T q_k)
+	x_{k + 1} = x_k + alpha_k * p_k
+	r_{k + 1} = r_k - alpha_k * q_k
+	z_{k + 1} = M^(-1) r_{k + 1}
+	beta_k = (z_{k + 1}^T r_{k + 1}) / (z_k^T r_k)
+	p_{k + 1} = z_{k + 1} + beta_k p_k
+End
+
+Here, M^(-1) is the preconditioner of (A (D + gamma I)^(-1) A^T + delta I)
+*/
+
+double PCG_TMP_ROW[MAX_ROWS];
 
 void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double* csrValAt, int* csrColIndAt, int* csrRowPtrAt, double* csrValA, int* csrColIndA, int* csrRowPtrA, 
 					   double* d, double* b, double* x, double* tmp_col, double* r, double* z, double* p, double* q)
@@ -313,7 +300,7 @@ void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double*
 	for (int i = 0; i < n_Row; i ++)
 		PCG_PERM[i] = i;
 	RenewPartialCholesky(n_Row, n_Col, csrValA, csrColIndA, csrRowPtrA, d, gamma, delta); // Gamma and Delta need to be adjusted!
-	PCGDebugHelper(n_Row, n_Col, csrValA, csrColIndA, d, gamma, delta);
+	//PCGDebugHelper(n_Row, n_Col, csrValA, csrColIndA, d, gamma, delta);
 	
 	char MKL_matdescra[6] = {0};
 	MKL_matdescra[0] = 'G';
@@ -379,21 +366,27 @@ void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double*
 		// x_{k + 1} = x_k + alpha_k * p_k
 		cblas_daxpy(n_Row, alpha, p, 1, x, 1); // y = alpha * x + y
 
+		// TEST
+		//for (int i = 0; i < n_Row; i ++) PCG_TMP_ROW[i] = r[i];
+
 		// r_{k + 1} = r_k - alpha_k * q_k
 		cblas_daxpy(n_Row, -alpha, q, 1, r, 1); // y = alpha * x + y
 
 		// z_{k + 1} = M^(-1) r_{k + 1}
 		Preconditioner(n_Row, n_Col, r, z);
 
+		// TEST
+		//printf("conj = %e\n", cblas_ddot(n_Row, PCG_TMP_ROW, 1, z, 1));
+
 		// beta_k = (z_{k + 1}^T r_{k + 1}) / (z_k^T r_k)
 		double beta_up = cblas_ddot(n_Row, z, 1, r, 1);
 		double beta = beta_up / alpha_up;
 		
-		// p_{k + 1} = r_{k + 1} + beta_k p_k
+		// p_{k + 1} = z_{k + 1} + beta_k p_k
 		// Step 1: p = beta * p
 		cblas_dscal(n_Row, beta, p, 1);
-		// Step 2: p = p + r
-		cblas_daxpy(n_Row, 1, r, 1, p, 1); // y = alpha * x + y
+		// Step 2: p = p + z
+		cblas_daxpy(n_Row, 1, z, 1, p, 1); // y = alpha * x + y
 	}
 
 	// Reorder x

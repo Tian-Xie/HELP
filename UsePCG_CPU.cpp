@@ -87,6 +87,13 @@ double dinv[MAX_COLS], CG_WorkVar[MAX_COLS + MAX_ROWS * 4];
 // Solution: (A D^(-1) A^T) x_2 = (A D^(-1) b_1 - b_2)
 //           x_1 = D^(-1) (b_1 - A^T x_2)
 // Need to call RenewLinearEquation(d) if ADA^T is not factorized yet!
+
+
+// Regularized KKT system solves
+// [ D + lambda I    A^T  ][x_1] == [b_1]
+// [      A        delta I][x_2]    [b_2]
+//
+
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2)
 {
 #ifdef PRINT_DEBUG
@@ -148,8 +155,8 @@ printf("%%Before Solve\n");
 	fclose(out);
 */
 
-	double CG_gamma = 1e-4;
-	double CG_delta = 1e-4;
+	double CG_gamma = 0;
+	double CG_delta = 0;
 	ConjugateGradient(CG_gamma, CG_delta, n_Row, n_Col, csrValAt, csrColIndAt, csrRowPtrAt, csrValA, csrColIndA, csrRowPtrA, d, tmp_row, X2, 
 		CG_WorkVar, CG_WorkVar + n_Col, CG_WorkVar + n_Col + n_Row, CG_WorkVar + n_Col + n_Row * 2, CG_WorkVar + n_Col + n_Row * 3);
 
