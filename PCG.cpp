@@ -180,7 +180,6 @@ void RenewPartialCholesky(int n_Row, int n_Col, double* csrValA, int* csrColIndA
 // Note that ``n_Row'' and ``n_Col'' are A's dimension size!
 double PREC_TMP1[MAX_ROWS], PREC_TMP2[MAX_ROWS];
 
-
 void Preconditioner(int n_Row, int n_Col, double* r, double* Ret)
 {
 	char MKL_matdescra[6] = {0};
@@ -340,7 +339,7 @@ void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double*
 	{
 		loop ++;
 		double rnorm = cblas_dnrm2(n_Row, r, 1);
-		printf("%d, %e\n", loop, rnorm);
+		if (loop % 10000 == 0) printf("%d, %e\n", loop, rnorm);
 		if (rnorm < terminate)
 			break;
 

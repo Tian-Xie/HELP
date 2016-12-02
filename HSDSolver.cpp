@@ -425,9 +425,11 @@ printf("In HSD_Search_Direction\n");
 printf("Out HSD_Search_Direction\n");
 #endif
 	// Some successful criteria ?????
-	if (r_p_norm + r_d_norm <= 1e-20 || r_p_norm + r_d_norm + r_g_norm <= HSD_sum_r_norm * 0.1)
+	/*if (r_p_norm + r_d_norm <= 1e-10 || r_p_norm + r_d_norm + r_g_norm <= HSD_sum_r_norm * 0.1)
 		return 1;
 	return 0;
+	*/
+	return 1;
 }
 
 // Stepsize in Section 4.1

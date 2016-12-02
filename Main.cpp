@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 	CheckError(Prog_Init(), "Initialization Failed!");
 	
 	char Buf[100];
-	//scanf("%s", Buf);
+	scanf("%s", Buf);
 
 	// Filename
 	if (argc == 1)
@@ -54,12 +54,13 @@ int main(int argc, char* argv[])
 		//strcpy(Filename, "QAP15.SIF");
 		//strcpy(Filename, "BRANDY.SIF");
 		//strcpy(Filename, "sparse2000");
-		strcpy(Filename, "D:\\NETLIB\\afiro.mps");
+		//strcpy(Filename, "D:\\NETLIB\\afiro.mps");
+		//strcpy(Filename, "D:\\NETLIB\\25FV47.mps");
 		//strcpy(Filename, "example3.mps");
 		//strcpy(Filename, "example.mps");
 		//strcpy(Filename, "D:\\NETLIB\\MODSZK1.MPS");
 		//strcpy(Filename, "D:\\NETLIB\\BOEING2.MPS");
-		//sprintf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
+		sprintf(Filename, "D:\\NETLIB\\%s.MPS", Buf);
 	}
 	else
 		strcpy(Filename, argv[1]);

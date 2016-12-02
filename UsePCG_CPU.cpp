@@ -88,14 +88,10 @@ double dinv[MAX_COLS], CG_WorkVar[MAX_COLS + MAX_ROWS * 4];
 //           x_1 = D^(-1) (b_1 - A^T x_2)
 // Need to call RenewLinearEquation(d) if ADA^T is not factorized yet!
 
-
-// Regularized KKT system solves
-// [ D + lambda I    A^T  ][x_1] == [b_1]
-// [      A        delta I][x_2]    [b_2]
-//
-
 int SolveLinearEquation(double* d, double* b_1, double* b_2, double* x_1, double* x_2)
 {
+	double lambda = 1e-10;
+	double delta = 1e-10;
 #ifdef PRINT_DEBUG
 	printf("b_1 = zeros(%d, 1);\n", n_Col);
 	for (int i = 0; i < n_Col; i ++)
@@ -186,3 +182,9 @@ printf("%%After Solve\n");
 	return 0;
 }
 
+
+// Regularized KKT system solves
+// [ D + lambda I    A^T  ][x_1] == [b_1]
+// [      A        delta I][x_2]    [b_2]
+// Solution: (A (D + lambda I)^(-1) A^T - delta I) x_2 = A (D + lambda I)^(-1) b_1 - b_2
+//           x_1 = (D + lambda I)^(-1) (b_1 - A^T x_2)
