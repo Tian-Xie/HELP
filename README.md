@@ -12,7 +12,7 @@ To explore the possibility of parallelization on multi-core CPU and GPU.
 
 ### Progress
 
-Currently working on Presolve and Cross-over. HSD Algorithm without presolving is preliminarily completed. Some numerical issues about LLt factorization is known. (LDLt is more numerically robust.)
+Currently working on J. Gondzio's Matrix-free regime, an indirect solver (PCG) for large-scale testcases that direct solver cannot handle. 
 
 ### Disclaimer
 
@@ -24,7 +24,9 @@ This program is currently not finished testing. No warrenty. Use it at your own 
 
 2. Erling D. Andersen, Knud D. Andersen. (2000). The Mosek Interior Point Optimizer for Linear Programming: An Implementation of the Homogeneous Algorithm. Applied Optimization 33, 197-232.
 
-# Third Party Libraries
+3. Jacek Gondzio, Matrix-free interior point method, Computational Optimization and Applications, (2010).
+
+# Direct Solver: Third Party Libraries
 
 ##A. Sparse Cholesky Decomposition
 
