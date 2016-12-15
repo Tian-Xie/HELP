@@ -69,9 +69,9 @@ const double MaxPositive = 1e+30;
 const double MaxFinite = 0.99995 * MaxPositive;
 const double Var_Lower_Bound = 0;
 const double Var_Upper_Bound = MaxPositive;
-const int PRESOLVE_LINDEP = 1;
-const int PRESOLVE_LEVEL = 5;
-const int PRESOLVE_LOOP = 10;
+const int PRESOLVE_LINDEP = 0;
+const int PRESOLVE_LEVEL = 0;
+const int PRESOLVE_LOOP = 0;
 
 // Problem Status
 const int LP_STATUS_OK = 0;

@@ -163,7 +163,33 @@ void HSD_SolveLinearEquation(double* D, double* D_u, double* s, double* s_u, dou
 		HSD_SLE_RHS1[i] += D_u[i] * t_u[i] - s_u[i];
 	for (int i = 0; i < n_Row; i ++)
 		HSD_SLE_RHS2[i] = t[i];
+
+	/*
+	FILE* tmp = fopen("tmp.txt", "w");
+	fprintf(tmp, "n = %d;\n", n_LB);
+	fprintf(tmp, "m = %d;\n", n_Row);
+	fprintf(tmp, "d = zeros(n, 1);\n");
+	fprintf(tmp, "rhs1 = zeros(n, 1);\n");
+	fprintf(tmp, "rhs2 = zeros(m, 1);\n");
+	fprintf(tmp, "A = zeros(m, n);\n");
+	for (int i = 0; i < n_LB; i ++)		fprintf(tmp, "d(%d) = %e;\n", i + 1, D[i]);
+	for (int i = 0; i < n_LB; i ++)		fprintf(tmp,"rhs1(%d) = %e;\n", i + 1, HSD_SLE_RHS1[i]);
+	for (int i = 0; i < n_Row; i ++)	fprintf(tmp,"rhs2(%d) = %e;\n", i + 1, HSD_SLE_RHS2[i]);
+	for (int i = 0; i < n_Row; i ++)
+		for (int j = V_Matrix_Row_Head[i]; j != -1; j = V_Matrix_Row_Next[j])
+			fprintf(tmp,"A(%d, %d) = %e;\n", i + 1, V_Matrix_Col[j] + 1, V_Matrix_Value[j]);
+	fprintf(tmp, "rhs = [rhs1; rhs2];\n");
+	fprintf(tmp, "lhs = [diag(d) A'; A zeros(m, m)];\n");
+	fprintf(tmp, "ans = inv(lhs) * rhs\n");
+	fclose(tmp);
+	*/
 	SolveLinearEquation(D, HSD_SLE_RHS1, HSD_SLE_RHS2, p, q);
+	
+	/*
+	for (int i = 0; i < n_LB + n_FR; i ++)		printf("sol1[%d]\t%e\n", i, p[i]);
+	for (int i = 0; i < n_Row; i ++)		printf("sol2[%d]\t%e\n", i, q[i]);
+	*/
+
 	for (int i = 0; i < n_Row; i ++)
 		q[i] = -q[i];
 	// Now [ -D  A^T ][p] = [-s]
@@ -215,9 +241,21 @@ void HSD_LinearEquation_Bottom(double* D, double* D_u, double& DOT, double* p, d
 		HSD_LEBOT_RHS1_u[i] = 0;
 		HSD_LEBOT_RHS2_u[i] = -V_UB[i];
 	}
+
 	// Solve [ -D  A^T ][-p] = [c]
 	//       [  A      ][-q]   [b]
 	HSD_SolveLinearEquation(D, D_u, HSD_LEBOT_RHS1, HSD_LEBOT_RHS1_u, HSD_LEBOT_RHS2, HSD_LEBOT_RHS2_u, p, p_u, q, q_u);
+	/*
+  int k;
+  for (k = 0; k < n_Col; k ++)
+	  printf("p[%d] = %lf\n", k, p[Col_OldToNew[k]]);
+  for (k = 0; k < n_Row; k ++)
+	  printf("q[%d] = %lf\n", k, q[k]);
+  for (k = 0; k < n_UB; k ++)
+	  printf("pu[%d] = %lf\n", k, p_u[k]);
+  for (k = 0; k < n_UB; k ++)
+	  printf("qu[%d] = %lf\n", k, q_u[k]);  
+	  */
 	// DOT = -(-c; b)^T * (p; q) 
 	DOT = HSD_MixDots(p, q, q_u);
 }
@@ -427,11 +465,11 @@ printf("In HSD_Search_Direction\n");
 printf("Out HSD_Search_Direction\n");
 #endif
 	// Some successful criteria ?????
-	/*if (r_p_norm + r_d_norm <= 1e-10 || r_p_norm + r_d_norm + r_g_norm <= HSD_sum_r_norm * 0.1)
+	if (r_p_norm + r_d_norm <= 1e-10 || r_p_norm + r_d_norm + r_g_norm <= HSD_sum_r_norm * 0.1)
 		return 1;
 	return 0;
-	*/
-	return 1;
+	
+	//return 1;
 }
 
 // Stepsize in Section 4.1
@@ -577,7 +615,6 @@ void HSD_GetInitPoint()
 		HSD_xf[i] = 1.0 / (1.0 + 10.0 * fabs(HSD_x[n_LB + i]));
 	}
 
-	double d_tau = 0.0;
 	double n_All = 1.0 + n_LB + n_UB;
 	double mu = (DotProduct(n_LB, HSD_x, HSD_z) + DotProduct(n_UB, HSD_xu, HSD_zu) + HSD_tau * HSD_kappa) / n_All;
 	HSD_inf0 = HSD_tau / HSD_kappa;
@@ -717,11 +754,6 @@ printf("Into Iteration: Iter = %d\n", Iter);
 		for (int i = 0; i < n_FR; i ++)
 			HSD_xf[i] = 1.0 / (1.0 + 10.0 * fabs(HSD_x[n_LB + i]));
 		
-		if (Iter == 2)
-		{
-			int p;
-			p = 55;
-		}
 		HSD_Calc_Newton_Parameters(HSD_D, HSD_D_u, HSD_D_g, HSD_r_p, HSD_r_d, HSD_r_g, HSD_mu, HSD_rfval);
 		printf("| %4d | %16.7le | %16.7le | %8.1le | %8.1le | %8.1le |\n", Iter, HSD_primal_obj, HSD_dual_obj, HSD_relative_gap, HSD_primal_infeas, HSD_dual_infeas);
 		printf("+------+------------------+------------------+----------+----------+----------+\n");
