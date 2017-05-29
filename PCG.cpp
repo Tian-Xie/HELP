@@ -335,12 +335,11 @@ void ConjugateGradient(double gamma, double delta, int n_Row, int n_Col, double*
 	double terminate = cblas_dnrm2(n_Row, r, 1) * PREC_THRESHOLD;
 
 	int loop = 0;
-	//while (1)
-	for (loop = 0; loop < 10000; loop ++)
+	while (1)
 	{
 		loop ++;
 		double rnorm = cblas_dnrm2(n_Row, r, 1);
-		//if (loop % 10000 == 0) printf("%d, %e\n", loop, rnorm);
+		if (loop % 10000 == 0) printf("%d, %e\n", loop, rnorm);
 		if (rnorm < terminate)
 			break;
 

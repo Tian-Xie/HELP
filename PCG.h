@@ -16,8 +16,8 @@
 
 #include "LP.h"
 
-const double PREC_THRESHOLD = 1e-10;
-const int PART_CHOL_COLS = 100;
+const double PREC_THRESHOLD = 1e-20;
+const int PART_CHOL_COLS = 10;
 const int MAX_PART_CHOL_COLS = PART_CHOL_COLS;
 
 extern double PARTIAL_GR[MAX_ROWS][MAX_PART_CHOL_COLS];

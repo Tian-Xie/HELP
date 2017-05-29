@@ -74,3 +74,19 @@ You can adjust `OMP_NUM_THREADS` by the some command like `export OMP_NUM_THREAD
 **Reference**: P. E. Gill, W. Murray, M. A. Saunders and M. H. Wright (1987). Maintaining LU factors of a general sparse matrix, Linear Algebra and its Applications 88/89, 239-270.
 
 LUSOL supports Bartels-Golub-Reid updates for column replacement. Note that C Translation is used in another MILP solver: lp_solve (<http://lpsolve.sourceforge.net/5.5/>).
+
+## C. Iterative Methods
+
+These methods are used to solve the normal equation, (A D A^T) x = b. However, due to the ill-conditionness, the performance is far from satisfactory and is only used for fun. For testing, users can 
+
+(1) Include "UsePCG_CPU.cpp" and "PCG.cpp" for a CPU implementation, this is a preconditioned conjugate gradient written by myself. 
+For preconditioner, the following is referred:
+
+J. Gondzio, Matrix-Free Interior Point Method, Computational Optimization and Applications 51 (2012) pp. 457-480.
+
+(2) Another choice is use CG_DESCENT by including "UseCgDescent.cpp" and all files in subdirectory "CG_DESCENT", which is credit to
+
+[1] W. W. Hager and H. Zhang, A new conjugate gradient method with guaranteed descent and an efficient line search, SIAM Journal on Optimization, 16 (2005), 170-192.
+[2] W. W. Hager and H. Zhang, Algorithm 851: CG_DESCENT, A conjugate gradient method with guaranteed descent, ACM Transactions on Mathematical Software, 32 (2006), 113-137.
+[3] W. W. Hager and H. Zhang, A survey of nonlinear conjugate gradient methods, Pacific Journal of Optimization, 2 (2006), pp. 35-58.
+[4] W. W. Hager and H. Zhang, Limited memory conjugate gradients, www.math.ufl.edu/~hager/papers/CG/lcg.pdf
